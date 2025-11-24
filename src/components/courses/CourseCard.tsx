@@ -7,9 +7,13 @@ import {
 } from "lucide-react";
 import type { Course } from "./data";
 
-const BRAND_BTN = "bg-gradient-to-r from-indigo-500 to-violet-500 text-white";
-const BRAND_FILL = "bg-gradient-to-r from-indigo-500 to-violet-500";
+// --- ESTILOS UNIFICADOS EVALTIA --- //
+const CTA_BUTTON =
+  "inline-flex items-center gap-1 rounded-xl px-4 py-2 bg-indigo-600 text-white font-medium shadow-[0_8px_18px_rgba(15,23,42,0.35)] hover:bg-indigo-500 transition";
 
+const PROGRESS_FILL = "bg-indigo-500";
+
+// Mapeo de íconos según curso
 const iconMap: Record<string, React.ComponentType<any>> = {
   anatomia: Bone,
   histologia: Dna,
@@ -22,55 +26,64 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   patologia: Activity,
 };
 
+// Chip con icono
 function IconChip({ slug }: { slug: string }) {
   const Ico = iconMap[slug] ?? BookOpen;
   return (
-    <div className="h-9 w-9 rounded-xl bg-white/80 ring-1 ring-white/40 shadow flex items-center justify-center">
+    <div className="h-10 w-10 rounded-xl bg-white/80 border border-black/5 shadow flex items-center justify-center">
       <Ico className="h-5 w-5 text-slate-900" />
     </div>
   );
 }
 
+// --- COMPONENTE PRINCIPAL --- //
 type Props = { course: Course };
 
-// ✅ Export por defecto (evita el error “got: object”)
 export default function CourseCard({ course }: Props) {
   return (
-    <div className="rounded-2xl bg-white/70 backdrop-blur border border-white/20 shadow-sm hover:shadow transition-all hover:-translate-y-0.5">
-      <div className="p-4 sm:p-5">
+    <div className="rounded-2xl bg-white/70 backdrop-blur border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+      <div className="p-5">
+        {/* HEADER */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <IconChip slug={course.slug} />
-            <h3 className="text-lg font-semibold text-slate-900">{course.name}</h3>
+            <h3 className="text-lg font-semibold text-slate-900 leading-tight">
+              {course.name}
+            </h3>
           </div>
+
+          {/* DESKTOP BUTTON */}
           <Link
             href={`/dashboard/main/cursos/${course.slug}`}
-            className={`hidden sm:inline-flex items-center gap-1 rounded-xl px-3 py-1.5 ${BRAND_BTN} shadow`}
+            className={`${CTA_BUTTON} hidden sm:inline-flex`}
           >
-            Entrar <ChevronRight className="h-4 w-4" />
+            Entrar
+            <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
-        {/* Progreso */}
+        {/* PROGRESO */}
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-slate-700 mb-1">
             <span>Progreso</span>
             <span>{course.progress ?? 0}%</span>
           </div>
-          <div className="h-2 rounded-full bg-white/50 overflow-hidden">
+
+          <div className="h-2 rounded-full bg-slate-200/60 overflow-hidden">
             <div
-              className={`h-full ${BRAND_FILL} transition-all`}
+              className={`h-full ${PROGRESS_FILL} transition-all`}
               style={{ width: `${course.progress ?? 0}%` }}
             />
           </div>
         </div>
 
-        {/* CTA móvil */}
+        {/* MOBILE CTA */}
         <Link
           href={`/dashboard/main/cursos/${course.slug}`}
-          className={`mt-4 sm:hidden inline-flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 ${BRAND_BTN} shadow`}
+          className={`${CTA_BUTTON} sm:hidden w-full mt-4 justify-center`}
         >
-          Entrar <ChevronRight className="h-4 w-4" />
+          Entrar
+          <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
     </div>
