@@ -1,142 +1,257 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState } from "react";
+import supabase from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState({
-    nombre: "",
-    apellidos: "",
-    email: "",
-    password: "",
-  });
+  const [firstName, setFirstName] = useState("");
+  const [lastNameP, setLastNameP] = useState("");
+  const [lastNameM, setLastNameM] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    console.log("Registro exitoso:", formData);
-    router.push("/perfil");
-  };
+    setErrorMsg(null);
+
+    if (
+      !firstName ||
+      !lastNameP ||
+      !lastNameM ||
+      !username ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
+      setErrorMsg("Completa todos los campos.");
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setErrorMsg("Debes aceptar los términos y condiciones.");
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setErrorMsg(
+        "La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula y número."
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ✅ Ahora redirige correctamente al login
+      const redirectTo = `${window.location.origin}/auth/login`;
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name_paterno: lastNameP,
+            last_name_materno: lastNameM,
+            username,
+            accepted_terms: acceptedTerms,
+          },
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Después de registrarse va a check-email
+      router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setErrorMsg("Ocurrió un error. Inténtalo nuevamente.");
+      setLoading(false);
+    }
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#0B1B34] px-4">
-      <div className="flex w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-[#06121F]">
-        {/* LADO IZQUIERDO */}
-        <div className="w-1/2 bg-[#06121F] text-white p-10 flex flex-col justify-center items-center relative">
-          <Link href="/" className="mb-6 block">
-            <Image src="/evaltia-logo.png" alt="Logo Evaltia" width={70} height={70} />
-          </Link>
-          <h2 className="text-xl font-bold text-center mb-4">¡Toma el control de tu estudio!</h2>
-          <p className="text-sm text-center text-gray-300 max-w-xs">
-            Simulacros alineados con tu malla curricular. Accede gratis y estudia a tu ritmo.
-          </p>
+    <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 text-white">
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: `
+            radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 30% 70%, rgba(176, 196, 222, 0.15) 0%, transparent 50%),
+            linear-gradient(135deg, 
+              #2c3e50 0%,
+              #3a506b 25%,
+              #435e79 50%,
+              #516b87 75%,
+              #5f7995 100%
+            )
+          `,
+          backgroundBlendMode: "soft-light, screen, normal",
+          filter: "brightness(1.05) contrast(1.05)",
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-lg bg-white shadow-2xl rounded-2xl p-8 space-y-6 text-slate-900">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
+            <Image
+              src="/evaltia-logo.png"
+              alt="Evaltia"
+              width={24}
+              height={24}
+              priority
+            />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-slate-900">
+              Evaltia
+            </span>
+            <span className="text-[11px] text-slate-500">
+              Tu camino más fácil para estudiar medicina.
+            </span>
+          </div>
         </div>
 
-        {/* LADO DERECHO */}
-        <div className="w-1/2 bg-[#1A2235] p-10 text-white">
-          <h2 className="text-2xl font-bold mb-2">Crear cuenta</h2>
-          <p className="text-sm text-gray-400 mb-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-center mt-1">Crear cuenta</h1>
+          <p className="text-xs text-center text-slate-500">
             ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="text-[#00B4D8] hover:underline">
-              Inicia sesión
+            <Link
+              href="/auth/login"
+              className="text-indigo-600 hover:underline"
+            >
+              Inicia sesión aquí
             </Link>
           </p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="flex gap-4">
+        {errorMsg && (
+          <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-slate-700">Nombre</label>
+            <input
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-xs font-medium text-slate-700">
+                Apellido paterno
+              </label>
               <input
-                type="text"
-                name="nombre"
-                placeholder="Nombre"
-                value={formData.nombre}
-                onChange={handleChange}
-                required
-                className="w-1/2 px-4 py-2 rounded-md bg-[#0F172A] border border-gray-600 text-white placeholder-gray-400"
-              />
-              <input
-                type="text"
-                name="apellidos"
-                placeholder="Apellidos"
-                value={formData.apellidos}
-                onChange={handleChange}
-                required
-                className="w-1/2 px-4 py-2 rounded-md bg-[#0F172A] border border-gray-600 text-white placeholder-gray-400"
+                value={lastNameP}
+                onChange={(e) => setLastNameP(e.target.value)}
+                className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
               />
             </div>
 
+            <div className="flex-1">
+              <label className="text-xs font-medium text-slate-700">
+                Apellido materno
+              </label>
+              <input
+                value={lastNameM}
+                onChange={(e) => setLastNameM(e.target.value)}
+                className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-700">
+              Nombre de usuario
+            </label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-slate-700">
+              Correo electrónico
+            </label>
             <input
               type="email"
-              name="email"
-              placeholder="Correo electrónico"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 rounded-md bg-[#0F172A] border border-gray-600 text-white placeholder-gray-400"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
             />
+          </div>
 
-            {/* Campo de contraseña con botón de ver */}
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Contraseña"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                minLength={6}
-                pattern="^[A-Za-z0-9]+$"
-                title="Solo letras y números, mínimo 6 caracteres"
-                className="w-full px-4 py-2 pr-12 rounded-md bg-[#0F172A] border border-gray-600 text-white placeholder-gray-400"
-              />
+          <div>
+            <label className="text-xs font-medium text-slate-700">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+            <p className="text-[11px] text-slate-500 mt-1">
+              Mínimo 8 caracteres, con mayúscula, minúscula y número.
+            </p>
+          </div>
 
-              <button
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                aria-label="Mostrar u ocultar contraseña"
-              >
-                {showPassword ? (
-                  // OJO TACHADO
-                  <svg fill="none" strokeWidth="1.5" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
-                  </svg>
-                ) : (
-                  // OJO ABIERTO
-                  <svg fill="none" strokeWidth="1.5" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                  </svg>
-                )}
-              </button>
-            </div>
+          <div>
+            <label className="text-xs font-medium text-slate-700">
+              Repite la contraseña
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="mt-1 w-full border border-slate-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
 
-            <div className="flex items-center gap-2 text-sm">
-              <input type="checkbox" required className="accent-[#00B4D8]" />
-              <span>
-                Acepto los{" "}
-                <a href="#" className="text-[#00B4D8] hover:underline">
-                  Términos y condiciones
-                </a>
-              </span>
-            </div>
+          <label className="text-xs flex items-center gap-2 text-slate-700">
+            <input
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+            />
+            Acepto los términos y condiciones
+          </label>
 
-            <button
-              type="submit"
-              className="w-full bg-[#00B4D8] text-white py-2 rounded-md font-semibold hover:bg-[#009ec2] transition"
-            >
-              Crear cuenta
-            </button>
-          </form>
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-indigo-600 text-white py-2 rounded-md text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-60"
+          >
+            {loading ? "Creando cuenta..." : "Registrarme"}
+          </button>
+        </form>
       </div>
     </main>
   );

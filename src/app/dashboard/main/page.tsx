@@ -1,4 +1,8 @@
-// src/app/dashboard/main/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import supabase from "@/lib/supabase";
 
 type CourseProgress = {
   id: string;
@@ -43,6 +47,44 @@ const MOCK_DATA: DashboardData = {
 };
 
 export default function DashboardMainPage() {
+  const router = useRouter();
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      const { data, error } = await supabase.auth.getUser();
+      const user = data?.user;
+
+      // ❌ NO hay sesión → mandar a login
+      if (error || !user) {
+        router.replace("/login");
+        return;
+      }
+
+      // ❌ Hay sesión pero correo NO confirmado → mandar a check-email
+      if (!(user as any).email_confirmed_at) {
+        router.replace("/auth/check-email");
+        return;
+      }
+
+      // ✅ Logueado + correo confirmado → puede ver el hub
+      setCheckingSession(false);
+    }
+
+    checkSession();
+  }, [router]);
+
+  // ⬇⬇⬇ AQUÍ CAMBIÉ LO DEL MENSAJE
+  if (checkingSession) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="h-6 w-6 rounded-full border border-slate-300 border-t-transparent animate-spin" />
+      </main>
+    );
+  }
+  // ⬆⬆⬆ YA NO HAY TEXTO, SOLO UN SPINNER DISCRETO
+
+  // A partir de aquí, tu código tal cual 👇
   const data = MOCK_DATA;
 
   const globalRespondidas = data.globalCorrectas + data.globalIncorrectas;
@@ -50,13 +92,11 @@ export default function DashboardMainPage() {
     (globalRespondidas / data.globalTotal) * 100
   );
 
-  // Texto inteligente para la práctica activa
   const topicsLabel =
     data.activePractice?.topics.length === 1
       ? data.activePractice.topics[0]
       : `${data.activePractice?.topics.length} temas seleccionados`;
 
-  // Ej: "Práctica personalizada: Histología"
   const practiceTitle = `Práctica personalizada: ${data.activePractice?.courseName}`;
 
   return (
@@ -91,7 +131,6 @@ export default function DashboardMainPage() {
             </div>
           </div>
 
-          {/* mini resumen global */}
           <div className="mt-4 w-full text-xs text-gray-600 space-y-1">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -171,7 +210,6 @@ export default function DashboardMainPage() {
                     </span>
                   </div>
 
-                  {/* barra segmentada */}
                   <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden flex">
                     <div
                       className="h-full bg-emerald-500"
@@ -215,9 +253,7 @@ export default function DashboardMainPage() {
             <p className="mt-2 text-sm text-gray-800 font-semibold">
               {practiceTitle}
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              {topicsLabel}
-            </p>
+            <p className="mt-1 text-xs text-gray-500">{topicsLabel}</p>
 
             <div className="mt-3">
               <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
