@@ -26,16 +26,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* HERO BLANCO */}
+      {/* LANDING PRINCIPAL */}
       <HeroEvaltia />
-
-      {/* SECCIÓN DE PRUEBA */}
-      <section className="w-full bg-white py-32 text-center">
-        <h2 className="text-3xl font-bold mb-4">Sección de prueba</h2>
-        <p className="text-gray-600 text-lg">
-          Este bloque sirve para confirmar que el HeroEvaltia se renderiza correctamente.
-        </p>
-      </section>
 
       {/* FOOTER */}
       <footer className="bg-[#0B1B34] text-gray-300 pt-16 pb-10 px-6">

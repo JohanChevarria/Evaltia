@@ -1,28 +1,76 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CourseCard from "./CourseCard";
-import COURSES, { type Course } from "./data";
+import { supabase } from "../../lib/supabase";
+import type { Course } from "./data"; // 👈 usamos el MISMO tipo que CourseCard
+
+// Tipo para lo que viene de la BD (puede traer progress null)
+type DbCourse = {
+  id: string;
+  slug: string;
+  name: string;
+  progress: number | null;
+};
 
 export default function CourseList() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
-  const filtered: Course[] = useMemo(() => {
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, slug, name, progress")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error cargando cursos:", error.message);
+        setCourses([]);
+      } else if (data) {
+        // 👇 normalizamos lo que viene de Supabase al tipo Course del frontend
+        const normalized: Course[] = (data as DbCourse[]).map((c) => ({
+          id: c.id,
+          slug: c.slug,
+          name: c.name,
+          progress: c.progress ?? 0, // nunca null → siempre número
+        }));
+
+        setCourses(normalized);
+      }
+
+      setLoading(false);
+    }
+
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    const base = Array.isArray(COURSES) ? COURSES : [];
-    if (!q) return base;
-    return base.filter(c => c.name.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return courses;
+    return courses.filter((c) => c.name.toLowerCase().includes(q));
+  }, [courses, query]);
+
+  if (loading) {
+    return <div className="text-slate-600">Cargando cursos…</div>;
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Cursos</h2>
-        <span className="text-sm text-slate-600">{filtered.length} cursos</span>
+        <span className="text-sm text-slate-600">
+          {filtered.length} cursos
+        </span>
       </div>
 
       <div className="flex-1">
-        <label className="block text-xs font-medium text-slate-600">Buscar cursos</label>
+        <label className="block text-xs font-medium text-slate-600">
+          Buscar cursos
+        </label>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -39,7 +87,9 @@ export default function CourseList() {
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-sm text-slate-600">No se encontraron cursos con la búsqueda actual.</p>
+        <p className="text-sm text-slate-600">
+          No se encontraron cursos con la búsqueda actual.
+        </p>
       )}
     </div>
   );

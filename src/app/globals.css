@@ -1,9 +1,12 @@
+/* === IMPORTS === */
 @import "../styles/animated-gradient.css"; /* SIEMPRE debe ir arriba */
 
+/* === Tailwind === */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* === Variables para temas claro/oscuro === */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -16,6 +19,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Tema oscuro */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -23,8 +27,25 @@
   }
 }
 
+/* === Base del documento === */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* === Animación para tooltips, tarjetas, etc. === */
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade {
+  animation: fade 0.18s ease-out;
 }

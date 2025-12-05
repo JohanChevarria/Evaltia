@@ -58,8 +58,8 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // ✅ Ahora redirige correctamente al login
-      const redirectTo = `${window.location.origin}/auth/login`;
+      // 👇 AHORA el enlace del correo va directo al hub
+      const redirectTo = `${window.location.origin}/dashboard/main`;
 
       const { error } = await supabase.auth.signUp({
         email,
@@ -82,7 +82,7 @@ export default function RegisterPage() {
         return;
       }
 
-      // ✅ Después de registrarse va a check-email
+      // Después de registrarse va a check-email
       router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setErrorMsg("Ocurrió un error. Inténtalo nuevamente.");
