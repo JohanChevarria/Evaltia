@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
+import ResendButton from "./ResendButton";
 
 type CheckEmailPageProps = {
   searchParams: {
@@ -71,6 +72,9 @@ export default function CheckEmailPage({ searchParams }: CheckEmailPageProps) {
           >
             Ya confirmé → Iniciar sesión
           </Link>
+
+          {/* Resend, estilo “secundario” y limpio */}
+          <ResendButton email={email} />
 
           <p className="text-xs text-slate-500 text-center">
             ¿Correo incorrecto?{" "}

@@ -1,16 +1,9 @@
 // src/lib/supabase.ts
-import { createClient } from "@supabase/supabase-js";
+// ❌ NO USAR: este cliente causa mezcla de auth (localStorage) vs SSR cookies.
+// ✅ Usa:
+// - "@/lib/supabase/client" en componentes "use client"
+// - "@/lib/supabase/server" en server components / route handlers / middleware
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!url || !anon) {
-  // Lanzamos error claro en dev para evitar clientes "undefined"
-  throw new Error(
-    "Faltan NEXT_PUBLIC_SUPABASE_URL o NEXT_PUBLIC_SUPABASE_ANON_KEY en .env.local"
-  );
-}
-
-// Exportamos de ambas formas para evitar conflictos de import
-export const supabase = createClient(url, anon);
-export default supabase;
+throw new Error(
+  "No uses src/lib/supabase.ts. Usa '@/lib/supabase/client' (browser SSR) o '@/lib/supabase/server' (server SSR)."
+);

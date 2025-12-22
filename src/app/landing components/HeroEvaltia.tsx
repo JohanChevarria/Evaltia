@@ -1,14 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { cn } from "../lib/utils";
 
 export function HeroEvaltia() {
   return (
-    <section
-      className="bg-white text-slate-800 relative mx-auto flex max-w-7xl flex-col items-center px-6 pb-24 pt-20"
-    >
+    <section className="bg-white text-slate-800 relative mx-auto flex max-w-7xl flex-col items-center px-6 pb-24 pt-20">
       {/* Título animado */}
       <h1 className="text-center text-3xl font-extrabold md:text-5xl lg:text-6xl">
         {"Prepárate para tus exámenes con Evaltia".split(" ").map((w, i) => (
@@ -34,29 +30,20 @@ export function HeroEvaltia() {
         Avanza con bancos de preguntas, calendarios y estadísticas que se adaptan a tu ritmo.
       </motion.p>
 
-      {/* Botones */}
+      {/* Botones (ahora NO clickeables) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3, delay: 1.2 }}
         className="mt-8 flex flex-wrap justify-center gap-4"
       >
-        <Link
-          href="/demo"
-          className={cn(
-            "rounded-full bg-[#06121F] px-8 py-3 text-white transition-colors hover:bg-[#091930]"
-          )}
-        >
+        <div className="rounded-full bg-[#06121F] px-8 py-3 text-white opacity-60 cursor-not-allowed">
           Probar demo
-        </Link>
-        <Link
-          href="/#features"
-          className={cn(
-            "rounded-full border border-gray-300 px-8 py-3 text-gray-800 transition-colors hover:bg-gray-100"
-          )}
-        >
+        </div>
+
+        <div className="rounded-full border border-gray-300 px-8 py-3 text-gray-800 opacity-60 cursor-not-allowed">
           Ver características
-        </Link>
+        </div>
       </motion.div>
     </section>
   );

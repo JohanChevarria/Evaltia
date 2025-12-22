@@ -4,10 +4,11 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import supabase from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const supabase = createClient();
 
   const [firstName, setFirstName] = useState("");
   const [lastNameP, setLastNameP] = useState("");
@@ -58,7 +59,9 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 👇 AHORA el enlace del correo va directo al hub
+      const supabase = createClient();
+
+      // 👇 después de confirmar email, a donde quieres que aterrice el usuario
       const redirectTo = `${window.location.origin}/dashboard/main`;
 
       const { error } = await supabase.auth.signUp({
@@ -82,10 +85,11 @@ export default function RegisterPage() {
         return;
       }
 
-      // Después de registrarse va a check-email
       router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
+      console.error(err);
       setErrorMsg("Ocurrió un error. Inténtalo nuevamente.");
+    } finally {
       setLoading(false);
     }
   }
@@ -123,9 +127,7 @@ export default function RegisterPage() {
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-slate-900">
-              Evaltia
-            </span>
+            <span className="text-sm font-semibold text-slate-900">Evaltia</span>
             <span className="text-[11px] text-slate-500">
               Tu camino más fácil para estudiar medicina.
             </span>
@@ -136,10 +138,7 @@ export default function RegisterPage() {
           <h1 className="text-2xl font-bold text-center mt-1">Crear cuenta</h1>
           <p className="text-xs text-center text-slate-500">
             ¿Ya tienes cuenta?{" "}
-            <Link
-              href="/auth/login"
-              className="text-indigo-600 hover:underline"
-            >
+            <Link href="/auth/login" className="text-indigo-600 hover:underline">
               Inicia sesión aquí
             </Link>
           </p>
