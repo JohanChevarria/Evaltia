@@ -6,6 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const FORGOT_PASSWORD_PATH = "/forgot-password";
+
 type ProfileRow = {
   role?: string | null; // "admin" | "user"
   is_admin?: boolean | null;
@@ -143,7 +145,7 @@ export default function LoginPage() {
 
         <p className="text-xs text-center text-slate-600">
           ¿Aún no tienes cuenta?{" "}
-          <Link href="/auth/register" className="text-indigo-600 hover:underline">
+          <Link href="/register" className="text-indigo-600 hover:underline">
             Regístrate aquí
           </Link>
         </p>
@@ -204,7 +206,7 @@ export default function LoginPage() {
 
           <div className="flex justify-end">
             <Link
-              href="/auth/forgot-password"
+              href={FORGOT_PASSWORD_PATH}
               className="text-xs text-indigo-600 hover:underline"
             >
               ¿Olvidaste tu contraseña?

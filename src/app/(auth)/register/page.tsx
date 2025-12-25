@@ -85,7 +85,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push(`/auth/check-email?email=${encodeURIComponent(email)}`);
+      router.replace(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       console.error(err);
       setErrorMsg("Ocurrió un error. Inténtalo nuevamente.");
@@ -95,7 +95,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 text-white">
+    // ✅ ÚNICO CAMBIO: agregar py-16 para aire arriba/abajo (evita que quede pegado al margen final)
+    <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-16 text-white">
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -116,29 +117,33 @@ export default function RegisterPage() {
       />
 
       <div className="relative z-10 w-full max-w-lg bg-white shadow-2xl rounded-2xl p-8 space-y-6 text-slate-900">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
-            <Image
-              src="/evaltia-logo.png"
-              alt="Evaltia"
-              width={24}
-              height={24}
-              priority
-            />
+        <Link href="/" className="inline-block">
+          <div className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
+              <Image
+                src="/evaltia-logo.png"
+                alt="Evaltia"
+                width={24}
+                height={24}
+                priority
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-slate-900">
+                Evaltia
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Tu camino más fácil para estudiar medicina.
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-slate-900">Evaltia</span>
-            <span className="text-[11px] text-slate-500">
-              Tu camino más fácil para estudiar medicina.
-            </span>
-          </div>
-        </div>
+        </Link>
 
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-center mt-1">Crear cuenta</h1>
           <p className="text-xs text-center text-slate-500">
             ¿Ya tienes cuenta?{" "}
-            <Link href="/auth/login" className="text-indigo-600 hover:underline">
+            <Link href="/login" className="text-indigo-600 hover:underline">
               Inicia sesión aquí
             </Link>
           </p>

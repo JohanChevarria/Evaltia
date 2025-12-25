@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ExamBuilderModal from "../../../../../components/exams/ExamBuilderModal";
+import ExamBuilderModal from "@/app/(app)/exams/ExamBuilderModal";
 
 export default function CourseActions({ slug }: { slug: string }) {
   const [open, setOpen] = useState(false);

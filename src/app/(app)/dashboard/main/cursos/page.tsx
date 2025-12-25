@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import CoursesGrid from "../../../../components/courses/CoursesGrid";
+import CoursesGrid from "@/components/courses/CoursesGrid";
 
 export const metadata: Metadata = {
   title: "Cursos | Evaltia",

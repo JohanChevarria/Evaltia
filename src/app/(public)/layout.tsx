@@ -1,8 +1,6 @@
-import "./globals.css";
-
 export const metadata = {
   title: "Evaltia",
-  description: "Tu plataforma para estudiantes de medicina",
+  description: "Tu camino más fácil para estudiar medicina.",
 };
 
 export default function RootLayout({
