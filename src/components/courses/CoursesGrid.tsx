@@ -2,10 +2,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import COURSES, { type Course } from "./data";
+import COURSES, { type Course as MockCourse } from "./data";
 import {
-  BookOpen, Bone, Dna, Egg, BarChart3, FlaskConical,
-  HeartPulse, Bug, Pill, Activity, ChevronRight
+  BookOpen,
+  Bone,
+  Dna,
+  Egg,
+  BarChart3,
+  FlaskConical,
+  HeartPulse,
+  Bug,
+  Pill,
+  Activity,
+  ChevronRight,
 } from "lucide-react";
 
 // === estilos de marca unificados ===
@@ -27,6 +36,15 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   patologia: Activity,
 };
 
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quita tildes
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+
 function IconChip({ slug }: { slug: string }) {
   const Ico = iconMap[slug] ?? BookOpen;
   return (
@@ -36,15 +54,49 @@ function IconChip({ slug }: { slug: string }) {
   );
 }
 
-export default function CoursesGrid() {
+// 👇 Cursos reales desde DB (lo mínimo que necesitamos)
+export type DbCourseForGrid = {
+  id: string;
+  name: string;
+  // opcionales para no romperte nada si aún no existen en tu tabla
+  slug?: string | null;
+  progress?: number | null;
+};
+
+export default function CoursesGrid({
+  courses,
+  basePath = "/dashboard/main",
+}: {
+  courses?: DbCourseForGrid[];
+  basePath?: string; // "/dashboard/main" o `/dashboard/${uni}/main`
+}) {
   const [query, setQuery] = useState("");
 
-  const filtered: Course[] = useMemo(() => {
+  // Si nos pasan cursos, usamos eso. Si no, seguimos con el mock.
+  const normalized = useMemo(() => {
+    if (Array.isArray(courses)) {
+      return courses.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: (c.slug ?? slugify(c.name)) as string,
+        progress: typeof c.progress === "number" ? c.progress : 0,
+      }));
+    }
+
+    const base = Array.isArray(COURSES) ? (COURSES as MockCourse[]) : [];
+    return base.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      progress: c.progress ?? 0,
+    }));
+  }, [courses]);
+
+  const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
-    const base = Array.isArray(COURSES) ? COURSES : [];
-    if (!q) return base;
-    return base.filter((c) => c.name.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return normalized;
+    return normalized.filter((c) => c.name.toLowerCase().includes(q));
+  }, [query, normalized]);
 
   return (
     <div className="space-y-4">
@@ -79,7 +131,7 @@ export default function CoursesGrid() {
 
                 {/* CTA desktop */}
                 <Link
-                  href={`/dashboard/main/cursos/${c.slug}`}
+                  href={`${basePath}/cursos/${c.slug}`}
                   className={`${CTA_BUTTON} hidden sm:inline-flex`}
                 >
                   Entrar <ChevronRight className="h-4 w-4" />
@@ -103,7 +155,7 @@ export default function CoursesGrid() {
               {/* CTA móvil */}
               <div className="mt-4 sm:hidden">
                 <Link
-                  href={`/dashboard/main/cursos/${c.slug}`}
+                  href={`${basePath}/cursos/${c.slug}`}
                   className={`${CTA_BUTTON} w-full justify-center`}
                 >
                   Entrar <ChevronRight className="h-4 w-4" />

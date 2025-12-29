@@ -47,7 +47,6 @@ export default function UniversityOnboardingPage() {
 
         if (authError || !user) {
           setLoading(false);
-          // ✅ No navegues mil veces
           if (!didNavigateRef.current) {
             didNavigateRef.current = true;
             router.replace("/auth/login");
@@ -69,7 +68,6 @@ export default function UniversityOnboardingPage() {
           return;
         }
 
-        // ✅ Si ya completó, salimos sin refresh
         if ((profile as any)?.university_onboarding_completed) {
           setLoading(false);
           if (!didNavigateRef.current) {
@@ -162,8 +160,18 @@ export default function UniversityOnboardingPage() {
     setSaving(false);
 
     // ✅ CRÍTICO: NO uses router.refresh aquí (eso te estaba creando loop)
+    // ✅ CAMBIO: si eligió universidad, navega directo a /dashboard/{uni}/main
     if (!didNavigateRef.current) {
       didNavigateRef.current = true;
+
+      if (selectedMode === "university") {
+        const chosen = universities.find((u) => u.id === selectedUniversityId);
+        if (chosen?.code) {
+          router.replace(`/dashboard/${chosen.code.toLowerCase()}/main`);
+          return;
+        }
+      }
+
       router.replace("/dashboard/main");
     }
   }
