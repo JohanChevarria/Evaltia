@@ -23,9 +23,10 @@ export default async function StudioLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { uni: string };
+  params: Promise<{ uni: string }>;
 }) {
   const supabase = await createClient();
+  const { uni } = await params;
 
   // 1) Debe estar logueado
   const { data: { user } } = await supabase.auth.getUser();
@@ -44,7 +45,7 @@ export default async function StudioLayout({
   if (!profile.university_id) redirect(FALLBACK_PATH);
 
   // 3) Universidad por URL (usmp/upc/...)
-  const uniCode = params.uni.toUpperCase();
+  const uniCode = uni.toUpperCase();
 
   const { data: uniRow } = await supabase
     .from("universities")

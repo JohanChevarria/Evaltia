@@ -1,9 +1,28 @@
-// src/lib/supabase.ts
-// ❌ NO USAR: este cliente causa mezcla de auth (localStorage) vs SSR cookies.
-// ✅ Usa:
-// - "@/lib/supabase/client" en componentes "use client"
-// - "@/lib/supabase/server" en server components / route handlers / middleware
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-throw new Error(
-  "No uses src/lib/supabase.ts. Usa '@/lib/supabase/client' (browser SSR) o '@/lib/supabase/server' (server SSR)."
-);
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // si se llama desde un Server Component a veces no deja setear;
+            // en Route Handler sí debería permitir.
+          }
+        },
+      },
+    }
+  );
+}

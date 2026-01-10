@@ -1,46 +1,111 @@
-// src/app/(app)/exams/ExamBuilderModal.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 
 type ExamBuilderModalProps = {
-  // ✅ ahora el modal trabaja POR courseId (más estable que slug)
   courseId: string;
   uni: string; // código universidad (ej: usmp)
   open: boolean;
   onClose: () => void;
+
+  // ✅ NUEVO (para abrir instantáneo sin backend)
+  preloadedCourseName?: string;
+  preloadedTopics?: string[];
+  simulacroQuestions?: number;
+  simulacroMinutes?: number;
 };
 
 type UniRow = { id: string; code: string; name: string };
-type CourseRow = { id: string; name: string };
+type CourseRow = { id: string; name: string; university_id: string };
+type TopicRow = { id: string; title: string };
 
-export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamBuilderModalProps) {
+export default function ExamBuilderModal({
+  courseId,
+  uni,
+  open,
+  onClose,
+  preloadedCourseName,
+  preloadedTopics,
+  simulacroQuestions,
+  simulacroMinutes,
+}: ExamBuilderModalProps) {
   const supabase = useMemo(() => createClient(), []);
+  const [mounted, setMounted] = useState(false);
 
   const [examType, setExamType] = useState<"practica" | "simulacro">("practica");
+
   const [timed, setTimed] = useState(false);
   const [timeMinutes, setTimeMinutes] = useState<number>(60);
+
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [questionCount, setQuestionCount] = useState<number>(20);
 
-  // ✅ Datos reales
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [courseName, setCourseName] = useState<string>("Curso");
   const [topics, setTopics] = useState<string[]>([]);
+  const [practiceName, setPracticeName] = useState<string>("");
+
+  // ✅ defaults robustos
+  const simQuestions = Math.max(1, Math.min(500, Number(simulacroQuestions ?? 40) || 40));
+  const simMinutes = Math.max(1, Math.min(500, Number(simulacroMinutes ?? 60) || 60));
 
   const uniCode = (uni ?? "").toString().trim().toUpperCase();
 
+  useEffect(() => setMounted(true), []);
+
+  // Al abrir: resetea selección, bloquea scroll del body
   useEffect(() => {
     if (!open) return;
+
+    setSelectedTopics([]);
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
+  // ✅ Si el modal recibe data precargada, la aplica al abrir (sin loading)
+  useEffect(() => {
+    if (!open) return;
+
+    if (preloadedCourseName) {
+      setCourseName(preloadedCourseName);
+      setPracticeName((prev) => (prev.trim().length ? prev : `${preloadedCourseName} - Práctica`));
+    }
+    if (preloadedTopics && preloadedTopics.length) {
+      setTopics(preloadedTopics);
+    }
+  }, [open, preloadedCourseName, preloadedTopics]);
+
+  // ✅ Simulacro: cronometrado ON + bloqueado + setea minutos del curso
+  useEffect(() => {
+    if (!open) return;
+
+    if (examType === "simulacro") {
+      setTimed(true);
+      setTimeMinutes(simMinutes); // 👈 toma el del curso
+    }
+  }, [examType, open, simMinutes]);
+
+  // ✅ Fallback: solo carga del backend si NO llegó precargado
+  useEffect(() => {
+    if (!open) return;
+
+    const hasPreloaded = !!preloadedCourseName && !!(preloadedTopics && preloadedTopics.length);
+    if (hasPreloaded) return; // ✅ CERO backend
 
     let cancelled = false;
 
     async function load() {
       setErrorMsg(null);
       setLoading(true);
-      setSelectedTopics([]);
 
       try {
         if (!uniCode) {
@@ -62,10 +127,10 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
           return;
         }
 
-        // 2) curso por ID (y seguridad por universidad)
+        // 2) curso por ID (seguridad por universidad)
         const { data: course, error: courseError } = await supabase
           .from("courses")
-          .select("id, name, university_id")
+          .select("id, name, university_id, exam_config")
           .eq("id", courseId)
           .single();
 
@@ -75,7 +140,7 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
           return;
         }
 
-        if (course.university_id !== (uniRow as UniRow).id) {
+        if ((course as CourseRow).university_id !== (uniRow as UniRow).id) {
           setLoading(false);
           setErrorMsg("Este curso no pertenece a tu universidad.");
           return;
@@ -84,9 +149,9 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
         // 3) topics por course_id
         const { data: topicRows, error: topicsError } = await supabase
           .from("topics")
-          .select("id, name")
+          .select("id, title")
           .eq("course_id", (course as CourseRow).id)
-          .order("name", { ascending: true });
+          .order("title", { ascending: true });
 
         if (topicsError) {
           setLoading(false);
@@ -96,8 +161,16 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
 
         if (cancelled) return;
 
-        setCourseName((course as CourseRow).name);
-        setTopics((topicRows ?? []).map((t: any) => t.name));
+        const cName = (course as CourseRow).name ?? "Curso";
+        setCourseName(cName);
+        setTopics((topicRows ?? []).map((t: TopicRow) => t.title));
+        setPracticeName((prev) => (prev.trim().length ? prev : `${cName} - Práctica`));
+
+        // ✅ si vienes sin props de simulacro, intenta tomarlo de exam_config (fallback)
+        const cfg: any = (course as any)?.exam_config;
+        const minutes = cfg?.simulacro?.minutes;
+        if (typeof minutes === "number" && minutes > 0) setTimeMinutes(minutes);
+
         setLoading(false);
       } catch (e: any) {
         if (cancelled) return;
@@ -107,13 +180,14 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
     }
 
     load();
-
     return () => {
       cancelled = true;
     };
-  }, [open, courseId, supabase, uniCode]);
+  }, [open, supabase, uniCode, courseId, preloadedCourseName, preloadedTopics]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
+
+  const isSimulacro = examType === "simulacro";
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((prev) => (prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]));
@@ -136,48 +210,74 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
     let value = Number(e.target.value);
     if (Number.isNaN(value)) value = 1;
     if (value < 1) value = 1;
-    if (value > 120) value = 120;
+    if (value > 500) value = 500;
     setTimeMinutes(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Por ahora solo log
+    const finalExamName = isSimulacro ? `Simulacro - ${courseName}` : practiceName.trim() || `${courseName} - Práctica`;
+
     console.log({
       uni: uniCode,
       courseId,
       courseName,
       examType,
-      timed,
-      timeMinutes: timed ? timeMinutes : null,
+      examName: finalExamName,
+      timed: isSimulacro ? true : timed,
+      timeMinutes: (isSimulacro ? true : timed) ? (isSimulacro ? simMinutes : timeMinutes) : null,
       selectedTopics,
-      questionCount,
+      questionCount: isSimulacro ? simQuestions : questionCount,
     });
 
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 backdrop-blur-sm px-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="absolute inset-0" onClick={onClose} />
 
       <div
         className="relative w-full max-w-2xl rounded-2xl bg-white/70 backdrop-blur border border-black/5 shadow-lg p-6 sm:p-7"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
       >
         <div className="flex items-start justify-between mb-4">
-          <div>
+          <div className="w-full pr-6">
             <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Crear examen</h2>
-            <p className="text-sm text-slate-600 mt-1">
-              Curso: <span className="font-medium">{courseName}</span>
-            </p>
+
+            <div className="mt-2">
+              <p className="text-sm text-slate-600">
+                Curso: <span className="font-medium text-slate-800">{courseName}</span>
+              </p>
+            </div>
+
+            <div className="mt-3">
+              {!isSimulacro ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-600">Nombre de práctica:</span>
+                  <input
+                    value={practiceName}
+                    onChange={(e) => setPracticeName(e.target.value)}
+                    placeholder={`${courseName} - Práctica`}
+                    className="h-9 w-full max-w-md rounded-xl border border-black/10 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  />
+                </div>
+              ) : (
+                <p className="text-xs text-slate-600">
+                  Nombre: <span className="font-medium text-slate-800">{`Simulacro - ${courseName}`}</span>
+                </p>
+              )}
+            </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
             className="rounded-full border border-black/10 p-1.5 text-slate-700 bg-white hover:bg-slate-100 text-xs"
+            aria-label="Cerrar"
           >
             ✕
           </button>
@@ -197,6 +297,7 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Tipo */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-slate-800">Tipo de examen</h3>
 
@@ -216,41 +317,50 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
             </div>
           </div>
 
+          {/* Cronometrado */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-800">Cronometrado</h3>
 
               <button
                 type="button"
-                onClick={() => setTimed((t) => !t)}
+                onClick={() => {
+                  if (isSimulacro) return;
+                  setTimed((t) => !t);
+                }}
+                disabled={isSimulacro}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                  timed ? "bg-indigo-600" : "bg-slate-300"
-                }`}
+                  (isSimulacro ? true : timed) ? "bg-indigo-600" : "bg-slate-300"
+                } ${isSimulacro ? "opacity-70 cursor-not-allowed" : ""}`}
+                aria-disabled={isSimulacro}
               >
                 <span
                   className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                    timed ? "translate-x-5" : "translate-x-1"
+                    (isSimulacro ? true : timed) ? "translate-x-5" : "translate-x-1"
                   }`}
                 />
               </button>
             </div>
 
-            {timed && (
+            {(isSimulacro ? true : timed) && (
               <div className="flex items-center gap-3">
                 <label className="text-sm text-slate-700">Tiempo (minutos)</label>
                 <input
                   type="number"
                   min={1}
-                  max={120}
-                  value={timeMinutes}
+                  max={500}
+                  value={isSimulacro ? simMinutes : timeMinutes}
                   onChange={handleTimeChange}
-                  className="h-9 w-24 rounded-xl border border-black/10 bg-white text-sm text-center text-slate-700 shadow-sm focus:ring-indigo-600 focus:outline-none"
+                  disabled={isSimulacro}
+                  className={`h-9 w-24 rounded-xl border border-black/10 bg-white text-sm text-center text-slate-700 shadow-sm focus:ring-indigo-600 focus:outline-none ${
+                    isSimulacro ? "opacity-70 cursor-not-allowed" : ""
+                  }`}
                 />
-                <span className="text-xs text-slate-500">Máx: 120 min</span>
               </div>
             )}
           </div>
 
+          {/* Temas */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-800">Temas</h3>
@@ -279,38 +389,47 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
             </div>
           </div>
 
+          {/* Preguntas */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-slate-800">Número de preguntas</h3>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {[10, 20, 30].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => handleQuestionPreset(n)}
-                  className={`h-9 min-w-[3rem] rounded-xl px-3 text-sm border transition ${
-                    questionCount === n
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow"
-                      : "bg-white/70 border border-black/10 text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-600">Personalizado:</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={questionCount}
-                  onChange={handleQuestionInput}
-                  className="h-9 w-20 rounded-xl border border-black/10 bg-white text-sm text-center text-slate-700 shadow-sm focus:ring-indigo-600 focus:outline-none"
-                />
-                <span className="text-xs text-slate-500">Máx: 50</span>
+            {isSimulacro ? (
+              // ✅ En vez del mensaje: muestra el número bloqueado
+              <div className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm text-slate-700">
+                <span>Fijo por curso:</span>
+                <span className="font-semibold text-slate-900">{simQuestions}</span>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                {[10, 20, 40].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => handleQuestionPreset(n)}
+                    className={`h-9 min-w-[3rem] rounded-xl px-3 text-sm border transition ${
+                      questionCount === n
+                        ? "bg-indigo-600 text-white border-indigo-500 shadow"
+                        : "bg-white/70 border border-black/10 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-600">Personalizado:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={questionCount}
+                    onChange={handleQuestionInput}
+                    className="h-9 w-20 rounded-xl border border-black/10 bg-white text-sm text-center text-slate-700 shadow-sm focus:ring-indigo-600 focus:outline-none"
+                  />
+                  <span className="text-xs text-slate-500">Máx: 50</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-3">
@@ -332,6 +451,7 @@ export default function ExamBuilderModal({ courseId, uni, open, onClose }: ExamB
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

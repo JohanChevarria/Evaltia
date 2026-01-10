@@ -3,11 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import QuestionsEditorClient from "./QuestionsEditorClient";
 
 type PageProps = {
-  params: { uni: string; courseId: string; topicId: string };
+  params: Promise<{ uni: string; courseId: string; topicId: string }>;
 };
 
 export default async function TopicEditorPage({ params }: PageProps) {
   const supabase = await createClient();
+  const { uni, courseId, topicId } = await params;
 
   // 1) Sesión
   const { data: userRes } = await supabase.auth.getUser();
@@ -25,7 +26,7 @@ export default async function TopicEditorPage({ params }: PageProps) {
   if (profile.role !== "admin") redirect("/dashboard/main");
 
   // 3) Universidad por URL /studio/usmp/...
-  const uniCode = (params.uni || "").toLowerCase();
+  const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
     .from("universities")
@@ -42,16 +43,16 @@ export default async function TopicEditorPage({ params }: PageProps) {
   const { data: topic } = await supabase
     .from("topics")
     .select("id, title, course_id")
-    .eq("id", params.topicId)
+    .eq("id", topicId)
     .single();
 
-  if (!topic) redirect(`/studio/${uniCode}/editor/${params.courseId}`);
+  if (!topic) redirect(`/studio/${uniCode}/editor/${courseId}`);
 
   // 5) Conceptos del topic (tus “bloques”)
   const { data: concepts } = await supabase
     .from("concepts")
     .select("id, title, order_number")
-    .eq("topic_id", params.topicId)
+    .eq("topic_id", topicId)
     .eq("university_id", uniRow.id)
     .order("order_number", { ascending: true });
 
@@ -60,7 +61,7 @@ export default async function TopicEditorPage({ params }: PageProps) {
   const { data: questions } = await supabase
     .from("questions")
     .select("id, topic_id, text, explanation, created_at, university_id, concept_id")
-    .eq("topic_id", params.topicId)
+    .eq("topic_id", topicId)
     .eq("university_id", uniRow.id)
     .order("created_at", { ascending: false });
 
@@ -80,8 +81,8 @@ export default async function TopicEditorPage({ params }: PageProps) {
     <QuestionsEditorClient
       uniCode={uniCode}
       universityId={uniRow.id}
-      courseId={params.courseId}
-      topicId={params.topicId}
+      courseId={courseId}
+      topicId={topicId}
       topicTitle={topic.title}
       concepts={(concepts ?? []) as any[]}
       questions={(questions ?? []) as any[]}

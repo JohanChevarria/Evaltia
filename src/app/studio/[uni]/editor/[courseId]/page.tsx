@@ -2,11 +2,13 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import EditorClient from "../EditorClient";
+import EditSimulacroButton from "./EditSimulacroButton"; // 👈 SOLO ESTO NUEVO
 
-type PageProps = { params: { uni: string; courseId: string } };
+type PageProps = { params: Promise<{ uni: string; courseId: string }> };
 
 export default async function CoursePage({ params }: PageProps) {
   const supabase = await createClient();
+  const { uni, courseId } = await params;
 
   // 1) Sesión
   const { data: userRes } = await supabase.auth.getUser();
@@ -24,7 +26,7 @@ export default async function CoursePage({ params }: PageProps) {
   if (profile.role !== "admin") redirect("/dashboard/main");
 
   // 3) Universidad por código
-  const uniCode = (params.uni || "").toLowerCase();
+  const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
     .from("universities")
@@ -39,9 +41,7 @@ export default async function CoursePage({ params }: PageProps) {
     redirect("/admin-studio");
   }
 
-  const courseId = params.courseId;
-
-  // 5) Traer curso (y confirmar que sea de la uni)
+  // 5) Traer curso (MISMO QUERY QUE ANTES)
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("id, name, description")
@@ -58,7 +58,7 @@ export default async function CoursePage({ params }: PageProps) {
     .eq("course_id", courseId)
     .order("order_number", { ascending: true });
 
-  // 7) Preview de preguntas recientes del curso (opcional)
+  // 7) Preview preguntas
   const topicIds = (topics ?? []).map((t: any) => t.id);
 
   const { data: questions } = topicIds.length
@@ -91,12 +91,12 @@ export default async function CoursePage({ params }: PageProps) {
           </p>
         </div>
 
-        <Link
-          href={`/studio/${uniCode}`}
-          className="px-3 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-white hover:bg-slate-50"
-        >
-          Volver al Studio
-        </Link>
+        {/* 🔥 REEMPLAZO LIMPIO */}
+        <EditSimulacroButton
+          courseId={courseId}
+          initialQuestions={40}
+          initialMinutes={60}
+        />
       </div>
 
       {/* Realtime listener */}
@@ -130,7 +130,7 @@ export default async function CoursePage({ params }: PageProps) {
         )}
       </section>
 
-      {/* Preguntas recientes (preview) */}
+      {/* Preguntas recientes */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
         <h2 className="font-semibold">Vista previa: preguntas recientes</h2>
 

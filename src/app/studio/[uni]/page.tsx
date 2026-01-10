@@ -1,9 +1,10 @@
 export const dynamic = "force-dynamic";
 
-export default function StudioHome({ params }: { params: { uni: string } }) {
+export default async function StudioHome({ params }: { params: Promise<{ uni: string }> }) {
+  const { uni } = await params;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Evaltia Studio — {params.uni.toUpperCase()}</h1>
+      <h1 className="text-2xl font-bold">Evaltia Studio — {uni.toUpperCase()}</h1>
       <p className="text-gray-600">
         Panel de administración (multi-universidad por URL).
       </p>

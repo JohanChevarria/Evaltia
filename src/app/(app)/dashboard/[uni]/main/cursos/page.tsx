@@ -5,7 +5,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function DashboardCursosPage({ params }: { params: { uni: string } }) {
+export default async function DashboardCursosPage({
+  params,
+}: {
+  params: Promise<{ uni: string }>;
+}) {
+  const { uni } = await params;
+
   const supabase = await createClient();
 
   const {
@@ -52,7 +58,7 @@ export default async function DashboardCursosPage({ params }: { params: { uni: s
             {courses.map((c) => (
               <Link
                 key={c.id}
-                href={`/dashboard/${params.uni}/main/cursos/${c.id}`}
+                href={`/dashboard/${uni}/main/cursos/${c.id}`}
                 className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4 hover:bg-slate-50 transition"
                 prefetch
               >

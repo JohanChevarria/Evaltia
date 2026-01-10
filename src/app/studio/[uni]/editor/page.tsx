@@ -3,10 +3,11 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import EditorClient from "./EditorClient";
 
-type PageProps = { params: { uni: string } };
+type PageProps = { params: Promise<{ uni: string }> };
 
 export default async function EditorCoursesPage({ params }: PageProps) {
   const supabase = await createClient();
+  const { uni } = await params;
 
   // 1) Sesión
   const { data: userRes } = await supabase.auth.getUser();
@@ -24,7 +25,7 @@ export default async function EditorCoursesPage({ params }: PageProps) {
   if (profile.role !== "admin") redirect("/dashboard/main");
 
   // 3) Universidad por código URL (usmp/upc/...)
-  const uniCode = (params.uni || "").toLowerCase();
+  const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
     .from("universities")

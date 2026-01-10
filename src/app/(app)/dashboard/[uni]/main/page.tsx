@@ -1,3 +1,4 @@
+// src/app/(app)/dashboard/[uni]/main/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -37,7 +38,7 @@ type ProfileRow = {
   university_id: string | null;
 };
 
-export default function DashboardUniMainPage({ params }: { params: { uni: string } }) {
+export default function DashboardUniMainPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
@@ -58,8 +59,9 @@ export default function DashboardUniMainPage({ params }: { params: { uni: string
       const { data: u, error: uErr } = await supabase.auth.getUser();
       const user = u?.user;
 
+      // ✅ FIX: route group (auth) => login real es /login (no /auth/login)
       if (uErr || !user) {
-        router.replace("/auth/login");
+        router.replace("/login");
         return;
       }
 
@@ -71,8 +73,9 @@ export default function DashboardUniMainPage({ params }: { params: { uni: string
         .eq("id", user.id)
         .single();
 
+      // ✅ FIX: mismo cambio aquí
       if (pErr || !profile) {
-        router.replace("/auth/login");
+        router.replace("/login");
         return;
       }
 

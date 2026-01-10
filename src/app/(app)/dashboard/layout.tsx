@@ -15,7 +15,8 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/login");
+  // ✅ Login real (route group (auth)) => /login
+  if (!user) redirect("/login");
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -23,7 +24,8 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile) redirect("/auth/login");
+  // ✅ Login real
+  if (!profile) redirect("/login");
 
   const role = profile.role ?? "student";
 
@@ -35,5 +37,5 @@ export default async function DashboardLayout({
     redirect("/onboarding/university");
   }
 
-  return children;
+  return <>{children}</>;
 }

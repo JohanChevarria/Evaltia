@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Differentiator from "./Differentiator";
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
@@ -12,7 +13,7 @@ const fadeUp = {
 export function HeroEvaltia() {
   return (
     <section className="mx-auto w-full max-w-7xl px-6 pt-14 pb-20">
-      {/* HERO (estilo Hashnode, pero con tu paleta) */}
+      {/* HERO */}
       <div className="rounded-3xl border border-white/15 bg-white/10 backdrop-blur-md p-8 md:p-12">
         <motion.div {...fadeUp} transition={{ duration: 0.35 }} className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/80">
@@ -29,7 +30,7 @@ export function HeroEvaltia() {
             Diseñada para integrarse a tu ritmo, tu contexto y tu forma de aprender medicina.
           </p>
 
-          {/* Botones (Probar demo + Como funciona) */}
+          {/* Botones */}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               href="/register"
@@ -46,7 +47,7 @@ export function HeroEvaltia() {
             </Link>
           </div>
 
-          {/* espacio para imagen/preview (placeholder) */}
+          {/* Preview placeholder */}
           <div className="mt-12 flex justify-center">
             <div className="w-full max-w-5xl">
               <div
@@ -55,7 +56,6 @@ export function HeroEvaltia() {
               >
                 <div className="h-[220px] sm:h-[300px] md:h-[360px] w-full bg-[#06121F]/35" />
 
-                {/* barra superior fake tipo app */}
                 <div className="absolute top-0 left-0 right-0 h-12 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
                   <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -63,7 +63,6 @@ export function HeroEvaltia() {
                   <div className="ml-4 h-2 w-40 rounded bg-white/10" />
                 </div>
 
-                {/* texto guía para ti (lo puedes borrar cuando pongas screenshot real) */}
                 <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
                   <p className="text-white/75 text-sm md:text-base">
                     Aquí va el screenshot/preview del dashboard (cuando lo tengas).
@@ -71,14 +70,13 @@ export function HeroEvaltia() {
                 </div>
               </div>
 
-              {/* sombra suave debajo tipo “floating” */}
               <div className="mx-auto mt-6 h-10 w-[92%] rounded-full bg-black/25 blur-2xl" />
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* “Cómo funciona” (texto intro + 3 puntos) */}
+      {/* CÓMO FUNCIONA */}
       <div id="como-funciona" className="scroll-mt-28 mt-14">
         <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }}>
           <div className="rounded-3xl border border-white/15 bg-white/10 backdrop-blur-md p-8 md:p-10">
@@ -94,7 +92,6 @@ export function HeroEvaltia() {
           </div>
         </motion.div>
 
-        {/* 3 puntos */}
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <motion.div
             {...fadeUp}
@@ -146,6 +143,9 @@ export function HeroEvaltia() {
           </motion.div>
         </div>
       </div>
+
+      {/* ✅ NUEVA SECCIÓN (tabla comparativa) */}
+      <Differentiator />
     </section>
   );
 }

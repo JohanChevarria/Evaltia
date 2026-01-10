@@ -4,13 +4,13 @@ import { redirect } from "next/navigation";
 import ResendButton from "./ResendButton";
 
 type CheckEmailPageProps = {
-  searchParams: {
+  searchParams: Promise<{
     email?: string;
-  };
+  }>;
 };
 
-export default function CheckEmailPage({ searchParams }: CheckEmailPageProps) {
-  const email = searchParams.email;
+export default async function CheckEmailPage({ searchParams }: CheckEmailPageProps) {
+  const { email } = await searchParams;
 
   // 🚫 Si no hay email en la URL, redirigimos a register
   if (!email) {

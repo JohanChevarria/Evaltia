@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
-export default function StudioStats({ params }: { params: { uni: string } }) {
-  return <div className="text-xl font-bold">Stats — {params.uni.toUpperCase()}</div>;
+export default async function StudioStats({ params }: { params: Promise<{ uni: string }> }) {
+  const { uni } = await params;
+  return <div className="text-xl font-bold">Stats — {uni.toUpperCase()}</div>;
 }
