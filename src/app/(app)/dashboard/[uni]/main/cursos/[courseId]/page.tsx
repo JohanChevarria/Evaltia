@@ -6,6 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Triangle, ArrowLeft } from "lucide-react";
 import ExamBuilderModal from "@/app/(app)/exams/ExamBuilderModal";
+import { startReview } from "@/app/(app)/exams/lib/startReview";
 
 type CourseRow = { id: string; name: string; description: string | null };
 
@@ -43,6 +44,8 @@ export default function CursoDetallePage() {
   const [course, setCourse] = useState<CourseRow | null>(null);
   const [topics, setTopics] = useState<TopicRow[]>([]);
   const [examOpen, setExamOpen] = useState(false);
+  const [reviewLoadingId, setReviewLoadingId] = useState<string | null>(null);
+  const [reviewErrors, setReviewErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +115,33 @@ export default function CursoDetallePage() {
       cancelled = true;
     };
   }, [courseId, supabase, router]);
+
+  const handleStartReview = async (topic: TopicRow) => {
+    if (reviewLoadingId) return;
+    setReviewLoadingId(topic.id);
+    setReviewErrors((prev) => {
+      if (!prev[topic.id]) return prev;
+      const next = { ...prev };
+      delete next[topic.id];
+      return next;
+    });
+
+    try {
+      const sessionId = await startReview({
+        topicId: topic.id,
+        topicName: topic.title,
+        courseId,
+      });
+      router.push(`/exams/${sessionId}`);
+    } catch (err: any) {
+      setReviewErrors((prev) => ({
+        ...prev,
+        [topic.id]: err?.message ?? "No se pudo iniciar el repaso.",
+      }));
+    } finally {
+      setReviewLoadingId(null);
+    }
+  };
 
   return (
     <main className="px-4 sm:px-6 lg:px-10 py-6">
@@ -224,11 +254,10 @@ export default function CursoDetallePage() {
                             <button
                               type="button"
                               className="rounded-xl bg-white px-3 py-2 text-sm text-slate-700 border border-black/10 hover:bg-slate-100"
-                              onClick={() => {
-                                console.log("Repasar topic:", t.id, t.title);
-                              }}
+                              disabled={reviewLoadingId === t.id}
+                              onClick={() => handleStartReview(t)}
                             >
-                              Repasar
+                              {reviewLoadingId === t.id ? "Creando..." : "Repasar"}
                             </button>
 
                             <div className="relative group shrink-0">
@@ -247,6 +276,10 @@ export default function CursoDetallePage() {
                             </div>
                           </div>
                         </div>
+
+                        {reviewErrors[t.id] && (
+                          <div className="mt-2 text-xs text-red-600">{reviewErrors[t.id]}</div>
+                        )}
 
                         <div className="mt-3">
                           <div className="h-2.5 w-full rounded-full bg-slate-900/10 overflow-hidden border border-black/5 relative">

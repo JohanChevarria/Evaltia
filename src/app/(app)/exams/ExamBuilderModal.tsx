@@ -1,16 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 
 type ExamBuilderModalProps = {
   courseId: string;
-  uni: string; // código universidad (ej: usmp)
+  uni: string; // codigo universidad (ej: usmp)
   open: boolean;
   onClose: () => void;
 
-  // ✅ NUEVO (para abrir instantáneo sin backend)
+  // NUEVO (para abrir instantaneo sin backend)
   preloadedCourseName?: string;
   preloadedTopics?: string[];
   simulacroQuestions?: number;
@@ -20,6 +21,32 @@ type ExamBuilderModalProps = {
 type UniRow = { id: string; code: string; name: string };
 type CourseRow = { id: string; name: string; university_id: string };
 type TopicRow = { id: string; title: string };
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const normalizeTopicIds = (values: string[], availableTopics: TopicRow[]) => {
+  if (!values.length) return [];
+
+  const titleToId = new Map<string, string>();
+  for (const topic of availableTopics) {
+    const title = topic.title?.trim().toLowerCase();
+    if (title) titleToId.set(title, topic.id);
+  }
+
+  const ids = new Set<string>();
+  for (const raw of values) {
+    const value = raw?.toString().trim();
+    if (!value) continue;
+    if (UUID_REGEX.test(value)) {
+      ids.add(value);
+      continue;
+    }
+    const mapped = titleToId.get(value.toLowerCase());
+    if (mapped) ids.add(mapped);
+  }
+
+  return Array.from(ids);
+};
 
 export default function ExamBuilderModal({
   courseId,
@@ -32,6 +59,7 @@ export default function ExamBuilderModal({
   simulacroMinutes,
 }: ExamBuilderModalProps) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   const [examType, setExamType] = useState<"practica" | "simulacro">("practica");
@@ -46,10 +74,11 @@ export default function ExamBuilderModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [courseName, setCourseName] = useState<string>("Curso");
-  const [topics, setTopics] = useState<string[]>([]);
+  const [topics, setTopics] = useState<TopicRow[]>([]);
   const [practiceName, setPracticeName] = useState<string>("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // ✅ defaults robustos
+  // defaults robustos
   const simQuestions = Math.max(1, Math.min(500, Number(simulacroQuestions ?? 40) || 40));
   const simMinutes = Math.max(1, Math.min(500, Number(simulacroMinutes ?? 60) || 60));
 
@@ -57,7 +86,7 @@ export default function ExamBuilderModal({
 
   useEffect(() => setMounted(true), []);
 
-  // Al abrir: resetea selección, bloquea scroll del body
+  // Al abrir: resetea seleccion, bloquea scroll del body
   useEffect(() => {
     if (!open) return;
 
@@ -71,35 +100,36 @@ export default function ExamBuilderModal({
     };
   }, [open]);
 
-  // ✅ Si el modal recibe data precargada, la aplica al abrir (sin loading)
+  // Si el modal recibe data precargada, la aplica al abrir (sin loading)
   useEffect(() => {
     if (!open) return;
 
     if (preloadedCourseName) {
       setCourseName(preloadedCourseName);
-      setPracticeName((prev) => (prev.trim().length ? prev : `${preloadedCourseName} - Práctica`));
+      setPracticeName((prev) => (prev.trim().length ? prev : `${preloadedCourseName} - Practica`));
     }
     if (preloadedTopics && preloadedTopics.length) {
-      setTopics(preloadedTopics);
+      const normalized = normalizeTopicIds(preloadedTopics, topics);
+      if (normalized.length) setSelectedTopics(normalized);
     }
-  }, [open, preloadedCourseName, preloadedTopics]);
+  }, [open, preloadedCourseName, preloadedTopics, topics]);
 
-  // ✅ Simulacro: cronometrado ON + bloqueado + setea minutos del curso
+  // Simulacro: cronometrado ON + bloqueado + setea minutos del curso
   useEffect(() => {
     if (!open) return;
 
     if (examType === "simulacro") {
       setTimed(true);
-      setTimeMinutes(simMinutes); // 👈 toma el del curso
+      setTimeMinutes(simMinutes);
     }
   }, [examType, open, simMinutes]);
 
-  // ✅ Fallback: solo carga del backend si NO llegó precargado
+  // Fallback: solo carga del backend si NO llego precargado
   useEffect(() => {
     if (!open) return;
 
     const hasPreloaded = !!preloadedCourseName && !!(preloadedTopics && preloadedTopics.length);
-    if (hasPreloaded) return; // ✅ CERO backend
+    if (hasPreloaded) return;
 
     let cancelled = false;
 
@@ -110,11 +140,10 @@ export default function ExamBuilderModal({
       try {
         if (!uniCode) {
           setLoading(false);
-          setErrorMsg("No se detectó la universidad (uni).");
+          setErrorMsg("No se detecto la universidad (uni).");
           return;
         }
 
-        // 1) universidad por code
         const { data: uniRow, error: uniError } = await supabase
           .from("universities")
           .select("id, code, name")
@@ -123,11 +152,10 @@ export default function ExamBuilderModal({
 
         if (uniError || !uniRow) {
           setLoading(false);
-          setErrorMsg("Universidad inválida o no encontrada.");
+          setErrorMsg("Universidad invalida o no encontrada.");
           return;
         }
 
-        // 2) curso por ID (seguridad por universidad)
         const { data: course, error: courseError } = await supabase
           .from("courses")
           .select("id, name, university_id, exam_config")
@@ -146,7 +174,6 @@ export default function ExamBuilderModal({
           return;
         }
 
-        // 3) topics por course_id
         const { data: topicRows, error: topicsError } = await supabase
           .from("topics")
           .select("id, title")
@@ -163,10 +190,9 @@ export default function ExamBuilderModal({
 
         const cName = (course as CourseRow).name ?? "Curso";
         setCourseName(cName);
-        setTopics((topicRows ?? []).map((t: TopicRow) => t.title));
-        setPracticeName((prev) => (prev.trim().length ? prev : `${cName} - Práctica`));
+        setTopics((topicRows ?? []) as TopicRow[]);
+        setPracticeName((prev) => (prev.trim().length ? prev : `${cName} - Practica`));
 
-        // ✅ si vienes sin props de simulacro, intenta tomarlo de exam_config (fallback)
         const cfg: any = (course as any)?.exam_config;
         const minutes = cfg?.simulacro?.minutes;
         if (typeof minutes === "number" && minutes > 0) setTimeMinutes(minutes);
@@ -189,8 +215,8 @@ export default function ExamBuilderModal({
 
   const isSimulacro = examType === "simulacro";
 
-  const toggleTopic = (topic: string) => {
-    setSelectedTopics((prev) => (prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]));
+  const toggleTopic = (topicId: string) => {
+    setSelectedTopics((prev) => (prev.includes(topicId) ? prev.filter((t) => t !== topicId) : [...prev, topicId]));
   };
 
   const handleQuestionPreset = (n: number) => {
@@ -216,23 +242,59 @@ export default function ExamBuilderModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
 
-    const finalExamName = isSimulacro ? `Simulacro - ${courseName}` : practiceName.trim() || `${courseName} - Práctica`;
+    const finalExamName = isSimulacro ? `Simulacro - ${courseName}` : practiceName.trim() || `${courseName} - Practica`;
+    if (selectedTopics.length === 0) {
+      setErrorMsg("Elige al menos un tema.");
+      return;
+    }
 
-    console.log({
-      uni: uniCode,
-      courseId,
-      courseName,
-      examType,
-      examName: finalExamName,
-      timed: isSimulacro ? true : timed,
-      timeMinutes: (isSimulacro ? true : timed) ? (isSimulacro ? simMinutes : timeMinutes) : null,
-      selectedTopics,
-      questionCount: isSimulacro ? simQuestions : questionCount,
-    });
+    setErrorMsg(null);
+    setSubmitting(true);
 
-    onClose();
+    try {
+      const res = await fetch("/exams/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courseId,
+          topicIds: selectedTopics,
+          mode: examType === "simulacro" ? "simulacro" : "practica",
+          questionCount: isSimulacro ? simQuestions : questionCount,
+          timed: isSimulacro ? true : timed,
+          timeLimitMinutes: (isSimulacro ? true : timed) ? (isSimulacro ? simMinutes : timeMinutes) : null,
+          name: finalExamName,
+        }),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = data?.error ?? "No se pudo crear la sesion.";
+        throw new Error(msg);
+      }
+
+      const sessionId = data?.sessionId ?? data?.id;
+
+      onClose();
+      if (sessionId) {
+        router.push(`/exams/${sessionId}`);
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message ?? "Error creando el examen.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const topicList = topics.length
+    ? topics
+    : [
+        { id: "placeholder-1", title: "Tema 1" },
+        { id: "placeholder-2", title: "Tema 2" },
+        { id: "placeholder-3", title: "Tema 3" },
+        { id: "placeholder-4", title: "Tema 4" },
+      ];
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
@@ -257,11 +319,11 @@ export default function ExamBuilderModal({
             <div className="mt-3">
               {!isSimulacro ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600">Nombre de práctica:</span>
+                  <span className="text-xs text-slate-600">Nombre de practica:</span>
                   <input
                     value={practiceName}
                     onChange={(e) => setPracticeName(e.target.value)}
-                    placeholder={`${courseName} - Práctica`}
+                    placeholder={`${courseName} - Practica`}
                     className="h-9 w-full max-w-md rounded-xl border border-black/10 bg-white px-3 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   />
                 </div>
@@ -279,7 +341,7 @@ export default function ExamBuilderModal({
             className="rounded-full border border-black/10 p-1.5 text-slate-700 bg-white hover:bg-slate-100 text-xs"
             aria-label="Cerrar"
           >
-            ✕
+            X
           </button>
         </div>
 
@@ -287,7 +349,7 @@ export default function ExamBuilderModal({
           <div className="mb-4">
             {loading && (
               <div className="text-sm text-slate-700 bg-white/70 border border-black/10 rounded-xl p-3">
-                Cargando configuración del curso...
+                Cargando configuracion del curso...
               </div>
             )}
             {errorMsg && (
@@ -311,7 +373,7 @@ export default function ExamBuilderModal({
                     examType === type ? "bg-indigo-600 text-white shadow" : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
-                  {type === "practica" ? "Práctica" : "Simulacro"}
+                  {type === "practica" ? "Practica" : "Simulacro"}
                 </button>
               ))}
             </div>
@@ -368,13 +430,13 @@ export default function ExamBuilderModal({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(topics.length ? topics : ["Tema 1", "Tema 2", "Tema 3", "Tema 4"]).map((topic) => {
-                const active = selectedTopics.includes(topic);
+              {topicList.map((topic) => {
+                const active = selectedTopics.includes(topic.id);
                 return (
                   <button
-                    key={topic}
+                    key={topic.id}
                     type="button"
-                    onClick={() => toggleTopic(topic)}
+                    onClick={() => toggleTopic(topic.id)}
                     disabled={!!errorMsg || loading}
                     className={`rounded-xl px-3 py-2 text-sm border transition text-left ${
                       active
@@ -382,7 +444,7 @@ export default function ExamBuilderModal({
                         : "bg-white/70 backdrop-blur border border-black/10 text-slate-700 hover:bg-slate-100"
                     } ${!!errorMsg || loading ? "opacity-60 cursor-not-allowed" : ""}`}
                   >
-                    {topic}
+                    {topic.title}
                   </button>
                 );
               })}
@@ -391,10 +453,9 @@ export default function ExamBuilderModal({
 
           {/* Preguntas */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-slate-800">Número de preguntas</h3>
+            <h3 className="text-sm font-medium text-slate-800">Numero de preguntas</h3>
 
             {isSimulacro ? (
-              // ✅ En vez del mensaje: muestra el número bloqueado
               <div className="inline-flex items-center gap-2 rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-sm text-slate-700">
                 <span>Fijo por curso:</span>
                 <span className="font-semibold text-slate-900">{simQuestions}</span>
@@ -426,7 +487,7 @@ export default function ExamBuilderModal({
                     onChange={handleQuestionInput}
                     className="h-9 w-20 rounded-xl border border-black/10 bg-white text-sm text-center text-slate-700 shadow-sm focus:ring-indigo-600 focus:outline-none"
                   />
-                  <span className="text-xs text-slate-500">Máx: 50</span>
+                  <span className="text-xs text-slate-500">Max: 50</span>
                 </div>
               </div>
             )}
@@ -443,10 +504,10 @@ export default function ExamBuilderModal({
 
             <button
               type="submit"
-              disabled={!!errorMsg || loading}
+              disabled={!!errorMsg || loading || submitting}
               className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 disabled:opacity-60"
             >
-              Crear examen
+              {submitting ? "Creando..." : "Crear examen"}
             </button>
           </div>
         </form>
