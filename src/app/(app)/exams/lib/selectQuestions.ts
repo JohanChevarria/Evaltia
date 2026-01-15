@@ -53,17 +53,33 @@ export async function selectQuestions({
 
   // 2) Si RPC falló o vino vacío => fallback a query directa
   if (rpcError || questionIds.length === 0) {
-    let query = supabase
-      .from("questions")
-      // ✅ IMPORTANTE: SOLO columnas que existen en tu tabla questions
-      .select("id, topic_id, course_id, university_id, text")
-      .in("topic_id", topicIds)
-      .limit(1000);
+    const runQuery = async (withUniversity: boolean) => {
+      let query = supabase
+        .from("questions")
+        .select("id, topic_id, course_id, university_id, text")
+        .in("topic_id", topicIds)
+        .limit(1000);
 
-    if (courseId) query = query.eq("course_id", courseId);
-    if (universityId) query = query.eq("university_id", universityId);
+      if (courseId) query = query.eq("course_id", courseId);
+      if (withUniversity && universityId) query = query.eq("university_id", universityId);
 
-    const { data: fallbackQuestions, error: fallbackError } = await query;
+      const { data, error } = await query;
+      return { data, error };
+    };
+
+    // ✅ Primero intenta con universityId (si existe)
+    let { data: fallbackQuestions, error: fallbackError } = await runQuery(true);
+
+    // ✅ Si no hay nada, intenta SIN universityId (para el caso university_id = NULL o mismatch)
+    if ((!fallbackQuestions || fallbackQuestions.length === 0) && universityId) {
+      const second = await runQuery(false);
+      // solo reemplaza si el segundo intento sí trajo algo o si el primero tuvo error raro
+      if (second.data && second.data.length > 0) {
+        fallbackQuestions = second.data;
+        fallbackError = second.error;
+      }
+    }
+
     if (fallbackError || !fallbackQuestions || fallbackQuestions.length === 0) return [];
 
     const mapped: MinimalQuestion[] = (fallbackQuestions as QuestionRow[]).map((q) => ({
@@ -72,7 +88,6 @@ export async function selectQuestions({
       course_id: q.course_id ?? null,
       university_id: q.university_id ?? null,
       text: q.text ?? "",
-      // ✅ como no existen en tu tabla, retornan null
       image_url: null,
       hint: null,
     }));
@@ -84,7 +99,6 @@ export async function selectQuestions({
   // 3) RPC devolvió ids => traemos filas en ese set de ids
   const { data: questionRows, error: rowsError } = await supabase
     .from("questions")
-    // ✅ SOLO columnas existentes
     .select("id, topic_id, course_id, university_id, text")
     .in("id", questionIds);
 
@@ -105,8 +119,8 @@ export async function selectQuestions({
   }
 
   const ordered = questionIds
-  .map((id: string) => byId.get(id))
-  .filter((q: MinimalQuestion | undefined): q is MinimalQuestion => Boolean(q));
+    .map((id: string) => byId.get(id))
+    .filter((q: MinimalQuestion | undefined): q is MinimalQuestion => Boolean(q));
 
   return ordered.slice(0, maxLimit);
 }

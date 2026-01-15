@@ -32,8 +32,9 @@ export default function AdminSidebar({ collapsed }: Props) {
 
   return (
     <aside
-      className={`relative flex flex-col border-r bg-white h-[calc(100vh-56px)] transition-all duration-300 shadow-sm
-      ${collapsed ? "w-16" : "w-60"}`}
+      className={`shrink-0 flex flex-col border-r bg-white transition-all duration-300 shadow-sm
+      ${collapsed ? "w-16" : "w-60"}
+      h-full overflow-y-auto`}
     >
       {/* NAV PRINCIPAL */}
       <nav className="mt-3 px-2 space-y-1">

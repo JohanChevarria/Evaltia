@@ -1,4 +1,3 @@
-// src/app/(admin-studio)/admin-studio/(workspace)/editor/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -58,7 +57,9 @@ export default function EditorPage() {
       {error && !loading && (
         <div className="space-y-1">
           <div className="text-sm text-red-600">{error}</div>
-          {debugError && <div className="text-xs text-red-500">Detalle técnico: {debugError}</div>}
+          {debugError && (
+            <div className="text-xs text-red-500">Detalle técnico: {debugError}</div>
+          )}
         </div>
       )}
 
@@ -71,7 +72,11 @@ export default function EditorPage() {
       {!loading && !error && courses.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
-            <Link key={course.id} href={`/admin-studio/editor/${course.id}`} className="group">
+            <Link
+              key={course.id}
+              href={`/studio/admin-studio/editor/${course.id}`}
+              className="group"
+            >
               <div className="h-32 rounded-xl border border-gray-200 bg-white shadow-sm flex items-center justify-center text-center transition hover:shadow-md hover:border-[#3A5873]">
                 <span className="text-base font-semibold text-gray-800 group-hover:text-[#3A5873]">
                   {course.name}

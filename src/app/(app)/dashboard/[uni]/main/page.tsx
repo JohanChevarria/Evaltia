@@ -81,8 +81,19 @@ export default function DashboardUniMainPage() {
 
       const prof = profile as ProfileRow;
 
-      if (prof.role === "admin" || prof.role === "superadmin") {
-        router.replace("/admin-studio");
+      if (prof.role === "admin") {
+        if (!prof.university_id) {
+          return;
+        }
+
+        const { data: uniRow } = await supabase
+          .from("universities")
+          .select("code")
+          .eq("id", prof.university_id)
+          .single();
+
+        const uniCode = (uniRow?.code || "usmp").toLowerCase();
+        router.replace(`/studio/${uniCode}`);
         return;
       }
 

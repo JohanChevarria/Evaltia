@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 };
 
 type NoteBody = {
@@ -27,7 +27,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Payload inv\u00e1lido" }, { status: 400 });
   }
 
-  const sessionId = params?.sessionId;
+  const { sessionId } = await params;
   const questionId = body.questionId ?? "";
   const text = (body.text ?? "").toString();
 

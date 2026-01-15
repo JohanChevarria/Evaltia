@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 };
 
 type FinishBody = {
@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const sessionId = params?.sessionId;
+  const { sessionId } = await params;
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId requerido" }, { status: 400 });
   }

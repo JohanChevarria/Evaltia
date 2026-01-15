@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
 
 const LOGIN_PATH = "/auth/login";
 const UNIVERSITY_ONBOARDING_PATH = "/onboarding/university";
@@ -24,8 +25,15 @@ export default async function DashboardMainRedirect() {
   if (!profile) redirect(LOGIN_PATH);
 
   // Extra hardening: si por alguna razón cae aquí un admin, lo mandamos fuera
-  if (profile.role === "admin" || profile.role === "superadmin") {
-    redirect("/admin-studio");
+  if (profile.role === "admin") {
+    if (!profile.university_id) redirect("/dashboard/main");
+
+    const studioPath = await getStudioPathForUniversityId(
+      supabase as any,
+      profile.university_id
+    );
+
+    redirect(studioPath);
   }
 
   if (!profile.university_onboarding_completed || !profile.university_id) {

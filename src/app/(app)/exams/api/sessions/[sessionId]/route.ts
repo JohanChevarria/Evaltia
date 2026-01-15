@@ -1,31 +1,277 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getSessionPayload } from "../../../lib/sessionData";
+import { selectQuestions } from "../../lib/selectQuestions";
+import { shuffleWithSeed } from "../../lib/shuffle";
+import type { ExamMode } from "../../lib/types";
 
-type Params = {
-  params: { sessionId: string };
+type CreateBody = {
+  courseId?: string;
+  topicIds?: string[];
+  mode?: ExamMode;
+  questionCount?: number;
+  timed?: boolean;
+  timeLimitMinutes?: number | null;
+  name?: string;
+
+  // legacy
+  course_id?: string;
+  topic_id?: string;
+  topic_name?: string;
+  university_id?: string;
 };
 
-export async function GET(_req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function POST(req: Request) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    let body: CreateBody;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Payload inválido" }, { status: 400 });
+    }
+
+    const mode: ExamMode = body.mode ?? "practica";
+    const isReview = mode === "repaso" && typeof body.topic_id === "string";
+
+    if (!["practica", "simulacro", "repaso"].includes(mode)) {
+      return NextResponse.json({ error: "Modo inválido" }, { status: 400 });
+    }
+
+    // ========= REPASO =========
+    if (isReview) {
+      const topicId = (body.topic_id ?? "").toString().trim();
+      if (!topicId) {
+        return NextResponse.json({ error: "topic_id requerido" }, { status: 400 });
+      }
+
+      const courseId = (body.courseId ?? body.course_id ?? "").toString().trim();
+
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("university_id")
+        .eq("id", user.id)
+        .single();
+
+      if (profileErr) {
+        return NextResponse.json({ error: `Error perfil: ${profileErr.message}` }, { status: 500 });
+      }
+
+      const universityId = (profile as any)?.university_id ?? null;
+
+      let topicQuery = supabase.from("topics").select("id, title, course_id").eq("id", topicId);
+      if (courseId) topicQuery = topicQuery.eq("course_id", courseId);
+
+      const { data: topicRow, error: topicError } = await topicQuery.single();
+      if (topicError || !topicRow?.id) {
+        return NextResponse.json({ error: "Tema no encontrado" }, { status: 404 });
+      }
+
+      const finalCourseId = (topicRow as any).course_id ?? courseId;
+      if (!finalCourseId) {
+        return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
+      }
+
+      const { data: courseRow, error: courseError } = await supabase
+        .from("courses")
+        .select("id, university_id")
+        .eq("id", finalCourseId)
+        .single();
+
+      if (courseError || !courseRow?.id) {
+        return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
+      }
+
+      if (universityId && (courseRow as any).university_id && (courseRow as any).university_id !== universityId) {
+        return NextResponse.json({ error: "El curso no pertenece a tu universidad." }, { status: 403 });
+      }
+
+      const sessionId = randomUUID();
+
+      // 🔥 IMPORTANTE: NO dependas de filtros extra aquí: deja que selectQuestions maneje
+      const selectedQuestions = await selectQuestions({
+        supabase,
+        topicIds: [topicId],
+        courseId: finalCourseId,
+        universityId,
+        limit: 10,
+        seed: sessionId,
+      });
+
+      if (!selectedQuestions.length) {
+        return NextResponse.json({ error: "No se encontraron preguntas para el tema elegido." }, { status: 400 });
+      }
+
+      const orderedIds = shuffleWithSeed(selectedQuestions.map((q) => q.id), sessionId).slice(0, 10);
+      const finalQuestionIds = orderedIds.length ? orderedIds : selectedQuestions.map((q) => q.id);
+      const finalCount = Math.min(10, finalQuestionIds.length);
+      const topicName = (body.topic_name ?? "").trim() || (topicRow as any).title || "Repaso";
+
+      const { error: sessionError } = await supabase.from("exam_sessions").insert({
+        id: sessionId,
+        user_id: user.id,
+        university_id: universityId,
+        course_id: finalCourseId,
+        name: topicName,
+        mode: "repaso",
+        topic_ids: [topicId],
+        question_count: finalCount,
+        timed: false,
+        time_limit_minutes: null,
+        current_index: 0,
+        flagged_question_ids: [],
+      });
+
+      if (sessionError) {
+        return NextResponse.json({ error: sessionError.message }, { status: 500 });
+      }
+
+      const questionRows = finalQuestionIds.slice(0, finalCount).map((id, idx) => ({
+        session_id: sessionId,
+        question_id: id,
+        position: idx,
+      }));
+
+      const { error: questionsError } = await supabase.from("exam_session_questions").insert(questionRows);
+
+      if (questionsError) {
+        await supabase.from("exam_sessions").delete().eq("id", sessionId);
+        return NextResponse.json({ error: questionsError.message }, { status: 500 });
+      }
+
+      return NextResponse.json({ sessionId, questionCount: finalCount });
+    }
+
+    // ========= PRACTICA / SIMULACRO =========
+    const courseId = (body.courseId ?? body.course_id ?? "").toString().trim();
+    const topicIds = Array.isArray(body.topicIds) ? body.topicIds.filter(Boolean) : [];
+    const name = (body.name ?? "").trim() || (mode === "simulacro" ? "Simulacro" : "Práctica");
+
+    if (!courseId || topicIds.length === 0) {
+      return NextResponse.json({ error: "Faltan curso o temas." }, { status: 400 });
+    }
+
+    const requestedCount = Math.max(1, Math.min(500, Number(body.questionCount ?? 10)));
+    const timed = mode === "simulacro" ? true : !!body.timed;
+    const timeLimit = timed ? Number(body.timeLimitMinutes ?? null) : null;
+    const safeTimeLimit = timed && timeLimit && timeLimit > 0 ? Math.min(timeLimit, 500) : null;
+
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("university_id")
+      .eq("id", user.id)
+      .single();
+
+    if (profileErr) {
+      return NextResponse.json({ error: `Error perfil: ${profileErr.message}` }, { status: 500 });
+    }
+
+    const universityId = (profile as any)?.university_id ?? null;
+
+    const { data: courseRow, error: courseError } = await supabase
+      .from("courses")
+      .select("id, university_id")
+      .eq("id", courseId)
+      .single();
+
+    if (courseError || !courseRow?.id) {
+      return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
+    }
+
+    if (universityId && (courseRow as any).university_id && (courseRow as any).university_id !== universityId) {
+      return NextResponse.json({ error: "El curso no pertenece a tu universidad." }, { status: 403 });
+    }
+
+    // ✅ Valida topics pertenecen al curso
+    const { data: topicRows, error: topicsErr } = await supabase
+      .from("topics")
+      .select("id")
+      .in("id", topicIds)
+      .eq("course_id", courseId);
+
+    if (topicsErr) {
+      return NextResponse.json({ error: `Error topics: ${topicsErr.message}` }, { status: 500 });
+    }
+
+    const validTopicIds = (topicRows ?? []).map((t: any) => t.id).filter(Boolean);
+    if (validTopicIds.length === 0) {
+      return NextResponse.json({ error: "No hay temas válidos para este curso." }, { status: 400 });
+    }
+
+    // ✅ En vez de confiar en un COUNT (que puede fallar por RLS/indices),
+    // selecciona directamente y corta. Es más real.
+    const sessionId = randomUUID();
+
+    const selectedQuestions = await selectQuestions({
+      supabase,
+      topicIds: validTopicIds,
+      courseId,
+      universityId,
+      limit: requestedCount,
+      seed: sessionId,
+    });
+
+    if (!selectedQuestions.length) {
+      return NextResponse.json({ error: "No se encontraron preguntas para los temas elegidos." }, { status: 400 });
+    }
+
+    if (selectedQuestions.length < requestedCount) {
+      return NextResponse.json(
+        { error: `Solo hay ${selectedQuestions.length} preguntas disponibles para los temas elegidos (necesitas ${requestedCount}).` },
+        { status: 400 }
+      );
+    }
+
+    const orderedIds = shuffleWithSeed(selectedQuestions.map((q) => q.id), sessionId).slice(0, requestedCount);
+    const finalQuestionIds = orderedIds.length ? orderedIds : selectedQuestions.map((q) => q.id);
+    const finalCount = Math.min(requestedCount, finalQuestionIds.length);
+
+    const { error: sessionError } = await supabase.from("exam_sessions").insert({
+      id: sessionId,
+      user_id: user.id,
+      university_id: universityId,
+      course_id: courseId,
+      name,
+      mode,
+      topic_ids: validTopicIds,
+      question_count: finalCount,
+      timed,
+      time_limit_minutes: safeTimeLimit,
+      current_index: 0,
+      flagged_question_ids: [],
+    });
+
+    if (sessionError) {
+      return NextResponse.json({ error: sessionError.message }, { status: 500 });
+    }
+
+    const questionRows = finalQuestionIds.slice(0, finalCount).map((id, idx) => ({
+      session_id: sessionId,
+      question_id: id,
+      position: idx,
+    }));
+
+    const { error: questionsError } = await supabase.from("exam_session_questions").insert(questionRows);
+
+    if (questionsError) {
+      await supabase.from("exam_sessions").delete().eq("id", sessionId);
+      return NextResponse.json({ error: questionsError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ sessionId, questionCount: finalCount });
+  } catch (err: any) {
+    // ✅ Esto evita “Failed to fetch” (siempre devolvemos JSON)
+    return NextResponse.json(
+      { error: err?.message ?? "Error inesperado creando sesión" },
+      { status: 500 }
+    );
   }
-
-  const sessionId = params?.sessionId;
-  if (!sessionId) {
-    return NextResponse.json({ error: "sessionId requerido" }, { status: 400 });
-  }
-
-  const payload = await getSessionPayload(supabase, sessionId, user.id);
-
-  if (!payload) {
-    return NextResponse.json({ error: "Sesi\u00f3n no encontrada" }, { status: 404 });
-  }
-
-  return NextResponse.json(payload);
 }

@@ -49,21 +49,30 @@ export default async function TopicEditorPage({ params }: PageProps) {
   if (!topic) redirect(`/studio/${uniCode}/editor/${courseId}`);
 
   // 5) Conceptos del topic (tus “bloques”)
-  const { data: concepts } = await supabase
+  const { data: concepts, error: conceptsError } = await supabase
     .from("concepts")
     .select("id, title, order_number")
     .eq("topic_id", topicId)
     .eq("university_id", uniRow.id)
     .order("order_number", { ascending: true });
 
-  // 6) Preguntas del topic (tu BD real)
-  // ✅ según lo que dijiste: id, topic_id, text, explanation, created_at, university_id, concept_id
-  const { data: questions } = await supabase
+  console.log("SERVER DEBUG conceptsError:", conceptsError);
+
+  // 6) Preguntas del topic (✅ incluye difficulty)
+  const { data: questions, error: questionsError } = await supabase
     .from("questions")
-    .select("id, topic_id, text, explanation, created_at, university_id, concept_id")
+    .select("id, topic_id, text, created_at, university_id, concept_id, difficulty")
     .eq("topic_id", topicId)
     .eq("university_id", uniRow.id)
     .order("created_at", { ascending: false });
+
+  console.log("SERVER DEBUG questionsError:", questionsError);
+
+  // ✅ DEBUG temporal (server)
+  console.log("SERVER DEBUG topicId:", topicId);
+  console.log("SERVER DEBUG uniRow.id:", uniRow?.id);
+  console.log("SERVER DEBUG questions count:", (questions ?? []).length);
+  console.log("SERVER DEBUG questions sample:", (questions ?? []).slice(0, 2));
 
   const questionIds = (questions ?? []).map((q: any) => q.id);
 

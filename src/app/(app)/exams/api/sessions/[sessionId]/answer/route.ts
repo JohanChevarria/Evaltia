@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 type Params = {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 };
 
 type AnswerBody = {
@@ -21,7 +21,7 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const sessionId = params?.sessionId;
+  const { sessionId } = await params;
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId requerido" }, { status: 400 });
   }
@@ -89,7 +89,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if ((session as any).mode === "practica" && lastAnswer) {
-    return NextResponse.json({ locked: true, attempt: lastAnswer.attempt }, { status: 200 });
+    return NextResponse.json({ locked: true, attempt: (lastAnswer as any).attempt }, { status: 200 });
   }
 
   const attempt = ((lastAnswer as any)?.attempt ?? 0) + 1;

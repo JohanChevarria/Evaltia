@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
 import EditorClient from "./EditorClient";
 
 type PageProps = { params: Promise<{ uni: string }> };
@@ -24,6 +25,10 @@ export default async function EditorCoursesPage({ params }: PageProps) {
   if (!profile) redirect("/auth/login");
   if (profile.role !== "admin") redirect("/dashboard/main");
 
+  const fallbackPath = profile.university_id
+    ? await getStudioPathForUniversityId(supabase as any, profile.university_id)
+    : "/dashboard/main";
+
   // 3) Universidad por código URL (usmp/upc/...)
   const uniCode = (uni || "").toLowerCase();
 
@@ -33,11 +38,11 @@ export default async function EditorCoursesPage({ params }: PageProps) {
     .ilike("code", uniCode)
     .single();
 
-  if (!uniRow) redirect("/admin-studio");
+  if (!uniRow) redirect(fallbackPath);
 
   // 4) Bloqueo: admin solo puede ver SU universidad
   if (!profile.university_id || profile.university_id !== uniRow.id) {
-    redirect("/admin-studio");
+    redirect(fallbackPath);
   }
 
   // 5) Cursos de ESA universidad
@@ -49,7 +54,7 @@ export default async function EditorCoursesPage({ params }: PageProps) {
 
   if (coursesError) {
     // si quieres, puedes mostrar un mensaje en UI, pero por ahora redirijo simple:
-    redirect("/admin-studio");
+    redirect(fallbackPath);
   }
 
   return (

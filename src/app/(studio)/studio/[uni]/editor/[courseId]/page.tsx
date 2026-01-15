@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
 import EditorClient from "../EditorClient";
 import EditSimulacroButton from "./EditSimulacroButton"; // 👈 SOLO ESTO NUEVO
 
@@ -25,6 +26,10 @@ export default async function CoursePage({ params }: PageProps) {
   if (!profile) redirect("/auth/login");
   if (profile.role !== "admin") redirect("/dashboard/main");
 
+  const fallbackPath = profile.university_id
+    ? await getStudioPathForUniversityId(supabase as any, profile.university_id)
+    : "/dashboard/main";
+
   // 3) Universidad por código
   const uniCode = (uni || "").toLowerCase();
 
@@ -34,11 +39,11 @@ export default async function CoursePage({ params }: PageProps) {
     .ilike("code", uniCode)
     .single();
 
-  if (!uniRow) redirect("/admin-studio");
+  if (!uniRow) redirect(fallbackPath);
 
   // 4) Bloqueo por universidad
   if (!profile.university_id || profile.university_id !== uniRow.id) {
-    redirect("/admin-studio");
+    redirect(fallbackPath);
   }
 
   // 5) Traer curso (MISMO QUERY QUE ANTES)

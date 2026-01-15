@@ -1,6 +1,7 @@
 // src/app/(app)/dashboard/layout.tsx
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
 
 export const dynamic = "force-dynamic";
 
@@ -29,8 +30,17 @@ export default async function DashboardLayout({
 
   const role = profile.role ?? "student";
 
-  if (role === "admin" || role === "superadmin") {
-    redirect("/admin-studio");
+  if (role === "admin") {
+    if (!profile.university_id) {
+      redirect("/dashboard/main");
+    }
+
+    const studioPath = await getStudioPathForUniversityId(
+      supabase as any,
+      profile.university_id
+    );
+
+    redirect(studioPath);
   }
 
   if (!profile.university_onboarding_completed) {

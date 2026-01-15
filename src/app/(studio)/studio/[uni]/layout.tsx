@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import React from "react";
 import { redirect } from "next/navigation";
-import AdminShell from "@/app/(admin-studio)/components/AdminShell";
+import AdminShell from "@/app/(studio)/components/AdminShell";
 import { createClient } from "@/lib/supabase/server";
 
 const LOGIN_PATH = "/auth/login";
