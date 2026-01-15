@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import Differentiator from "./Differentiator";
 
@@ -10,141 +11,210 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
+// 👉 TU screenshot real
+const DASH_SRC = "/landing/dashboard-screenshot.png";
+
+function DashboardFrame({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="
+      relative overflow-hidden rounded-3xl
+      border border-white/20 bg-white/10 backdrop-blur-md
+      shadow-[0_28px_70px_rgba(0,0,0,0.20)]
+    ">
+      {/* Barra superior tipo app */}
+      <div className="
+        absolute top-0 left-0 right-0 h-12
+        border-b border-white/15 bg-white/10
+        flex items-center px-4 gap-2 z-10
+      ">
+        <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
+        <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+        <div className="ml-4 h-2 w-40 rounded bg-white/25" />
+      </div>
+
+      {/* Contenido */}
+      <div className="pt-12">{children}</div>
+    </div>
+  );
+}
+
 export function HeroEvaltia() {
   return (
     <section className="mx-auto w-full max-w-7xl px-6 pt-14 pb-20">
-      {/* HERO */}
-      <div className="rounded-3xl border border-white/15 bg-white/10 backdrop-blur-md p-8 md:p-12">
-        <motion.div {...fadeUp} transition={{ duration: 0.35 }} className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/80">
-            <span className="h-1.5 w-1.5 rounded-full bg-white/70" />
-            Educación médica con estructura
-          </div>
 
-          <h1 className="mt-6 text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
-            El mejor camino para tu{" "}
-            <span className="text-white/90">formación médica</span>
-          </h1>
+      {/* HERO TEXT */}
+      <div className="text-center">
+        <motion.div
+          {...fadeUp}
+          transition={{ duration: 0.35 }}
+          className="text-white/85 text-sm"
+        >
+          Bienvenido a Evaltia
+        </motion.div>
 
-          <p className="mt-5 mx-auto max-w-3xl text-base md:text-lg text-white/75 leading-relaxed">
-            Diseñada para integrarse a tu ritmo, tu contexto y tu forma de aprender medicina.
-          </p>
+        <motion.h1
+          {...fadeUp}
+          transition={{ duration: 0.38, delay: 0.03 }}
+          className="
+            mt-5 text-4xl md:text-6xl lg:text-7xl
+            font-extrabold tracking-tight text-white
+          "
+        >
+          El mejor camino para tu{" "}
+          <span className="text-white/95">formación médica</span>
+        </motion.h1>
 
-          {/* Botones */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/register"
-              className="rounded-full bg-white px-7 py-3 text-[#06121F] font-semibold opacity-90 hover:opacity-100 transition"
-            >
-              Probar demo
-            </Link>
+        <motion.p
+          {...fadeUp}
+          transition={{ duration: 0.35, delay: 0.06 }}
+          className="
+            mt-5 mx-auto max-w-3xl
+            text-base md:text-lg text-white/85
+            leading-relaxed
+          "
+        >
+          Diseñada para integrarse a tu ritmo, tu contexto
+          y tu forma de aprender medicina.
+        </motion.p>
 
-            <Link
-              href="/#como-funciona"
-              className="rounded-full border border-white/25 bg-white/10 px-7 py-3 text-white/85 opacity-90 hover:opacity-100 transition"
-            >
-              Ver cómo funciona
-            </Link>
-          </div>
+        {/* BOTONES */}
+        <motion.div
+          {...fadeUp}
+          transition={{ duration: 0.35, delay: 0.1 }}
+          className="mt-8 flex flex-wrap justify-center gap-3"
+        >
+          <Link
+            href="/register"
+            className="
+              rounded-xl bg-white px-7 py-3
+              text-[#0b1a2b] font-semibold
+              hover:bg-white/90 transition
+              shadow-[0_10px_18px_rgba(0,0,0,0.18)]
+            "
+          >
+            Probar demo
+          </Link>
 
-          {/* Preview placeholder */}
-          <div className="mt-12 flex justify-center">
-            <div className="w-full max-w-5xl">
-              <div
-                className="relative rounded-3xl border border-white/15 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden"
-                style={{ transform: "perspective(1200px) rotateX(6deg) rotateY(-10deg)" }}
-              >
-                <div className="h-[220px] sm:h-[300px] md:h-[360px] w-full bg-[#06121F]/35" />
-
-                <div className="absolute top-0 left-0 right-0 h-12 bg-white/5 border-b border-white/10 flex items-center px-4 gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/30" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <div className="ml-4 h-2 w-40 rounded bg-white/10" />
-                </div>
-
-                <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
-                  <p className="text-white/75 text-sm md:text-base">
-                    Aquí va el screenshot/preview del dashboard (cuando lo tengas).
-                  </p>
-                </div>
-              </div>
-
-              <div className="mx-auto mt-6 h-10 w-[92%] rounded-full bg-black/25 blur-2xl" />
-            </div>
-          </div>
+          <Link
+            href="/#como-funciona"
+            className="
+              rounded-xl border border-white/25
+              bg-white/10 px-7 py-3
+              text-white/95
+              hover:bg-white/15 transition
+            "
+          >
+            Ver cómo funciona
+          </Link>
         </motion.div>
       </div>
 
+      {/* DASHBOARD (FIJO, SIN SUPERPOSICIÓN) */}
+      <motion.div
+        {...fadeUp}
+        transition={{ duration: 0.45, delay: 0.15 }}
+        className="mt-14"
+      >
+        <div className="mx-auto max-w-6xl">
+          <DashboardFrame>
+            <div className="
+              relative h-[260px]
+              sm:h-[340px]
+              md:h-[420px]
+            ">
+              <Image
+                src={DASH_SRC}
+                alt="Dashboard Evaltia"
+                fill
+                priority
+                className="object-cover"
+                sizes="(max-width: 768px) 94vw, 920px"
+              />
+            </div>
+          </DashboardFrame>
+
+          {/* sombra */}
+          <div className="
+            mx-auto mt-6
+            h-10 w-[92%]
+            rounded-full bg-black/20
+            blur-2xl
+          " />
+        </div>
+      </motion.div>
+
       {/* CÓMO FUNCIONA */}
-      <div id="como-funciona" className="scroll-mt-28 mt-14">
-        <motion.div {...fadeUp} transition={{ duration: 0.35, delay: 0.05 }}>
-          <div className="rounded-3xl border border-white/15 bg-white/10 backdrop-blur-md p-8 md:p-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+      <div id="como-funciona" className="scroll-mt-28 mt-16">
+        <motion.div {...fadeUp} transition={{ duration: 0.35 }}>
+          <div className="
+            rounded-3xl border border-white/20
+            bg-white/10 backdrop-blur-md
+            p-8 md:p-10
+            shadow-[0_16px_40px_rgba(0,0,0,0.12)]
+          ">
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
               Una plataforma pensada para el estudio real de la medicina
             </h2>
 
-            <p className="mt-4 text-sm md:text-base text-white/75 leading-relaxed max-w-4xl">
-              En Evaltia entendemos que estudiar medicina no es seguir un único método ni un único ritmo.
-              Por eso construimos una plataforma que se adapta al contexto académico de cada estudiante,
-              organiza los recursos disponibles y permite evaluar el progreso de forma continua, clara y útil.
+            <p className="
+              mt-4 text-sm md:text-base
+              text-white/85 leading-relaxed
+              max-w-4xl
+            ">
+              En Evaltia entendemos que estudiar medicina
+              no es seguir un único método ni un único ritmo.
+              Por eso construimos una plataforma que se adapta
+              al contexto académico de cada estudiante.
             </p>
           </div>
         </motion.div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <motion.div
-            {...fadeUp}
-            transition={{ duration: 0.35, delay: 0.08 }}
-            className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6"
-          >
-            <div className="text-xs text-white/70">01</div>
-            <h3 className="mt-2 text-lg font-semibold text-white">
-              Estudia con libertad, mide tu progreso con precisión
-            </h3>
-            <p className="mt-2 text-sm text-white/75 leading-relaxed">
-              Accede a tus recursos desde donde estés y estudia según tu propio tiempo y dinámica.
-              Evaltia centraliza el material de estudio y te permite visualizar tu avance real por cursos,
-              temas y periodos, para que siempre sepas dónde estás y qué necesitas reforzar.
-            </p>
-          </motion.div>
-
-          <motion.div
-            {...fadeUp}
-            transition={{ duration: 0.35, delay: 0.12 }}
-            className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6"
-          >
-            <div className="text-xs text-white/70">02</div>
-            <h3 className="mt-2 text-lg font-semibold text-white">
-              Contenido alineado a tu universidad y a tu realidad académica
-            </h3>
-            <p className="mt-2 text-sm text-white/75 leading-relaxed">
-              Nos adaptamos a la forma en que se enseña medicina en cada universidad.
-              La plataforma se mantiene actualizada según los cambios curriculares y el contexto académico de
-              cada institución, asegurando que el estudio sea relevante, vigente y alineado a lo que realmente se evalúa.
-            </p>
-          </motion.div>
-
-          <motion.div
-            {...fadeUp}
-            transition={{ duration: 0.35, delay: 0.16 }}
-            className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6"
-          >
-            <div className="text-xs text-white/70">03</div>
-            <h3 className="mt-2 text-lg font-semibold text-white">
-              Evaltia mejora contigo
-            </h3>
-            <p className="mt-2 text-sm text-white/75 leading-relaxed">
-              La plataforma evoluciona a partir del uso real y del feedback de sus estudiantes.
-              Las sugerencias sobre preguntas y respuestas permiten mejorar continuamente la calidad del contenido y,
-              además, los usuarios que destacan por su desempeño y compromiso pueden acceder a oportunidades para formar
-              parte del equipo de Evaltia y contribuir directamente a la mejora del banco de preguntas y del aprendizaje.
-            </p>
-          </motion.div>
+          {[
+            {
+              n: "01",
+              t: "Estudia con libertad, mide tu progreso",
+              d: "Visualiza tu avance real por cursos y temas."
+            },
+            {
+              n: "02",
+              t: "Contenido alineado a tu universidad",
+              d: "Material actualizado según tu currícula."
+            },
+            {
+              n: "03",
+              t: "Evaltia mejora contigo",
+              d: "Feedback real para mejorar el banco."
+            }
+          ].map((i, idx) => (
+            <motion.div
+              key={idx}
+              {...fadeUp}
+              transition={{ duration: 0.35, delay: 0.05 * idx }}
+              className="
+                rounded-2xl border border-white/20
+                bg-white/10 backdrop-blur-md
+                p-6 hover:bg-white/15 transition
+              "
+            >
+              <div className="text-xs text-white/70">{i.n}</div>
+              <h3 className="mt-2 text-lg font-semibold text-white">
+                {i.t}
+              </h3>
+              <p className="mt-2 text-sm text-white/85">
+                {i.d}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </div>
 
-      {/* ✅ NUEVA SECCIÓN (tabla comparativa) */}
+      {/* SECCIÓN INFERIOR */}
       <Differentiator />
     </section>
   );
