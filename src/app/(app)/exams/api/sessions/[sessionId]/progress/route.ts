@@ -5,7 +5,7 @@ type Params = {
   params: Promise<{ sessionId: string }>;
 };
 
-type FinishBody = {
+type ProgressBody = {
   currentIndex?: number;
 };
 
@@ -24,34 +24,27 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "sessionId requerido" }, { status: 400 });
   }
 
-  let body: FinishBody = {};
+  let body: ProgressBody = {};
   try {
     body = await req.json();
   } catch {
     /* optional body */
   }
 
-  const { data: session } = await supabase
-    .from("exam_sessions")
-    .select("id")
-    .eq("id", sessionId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!session) {
-    return NextResponse.json({ error: "Sesi\u00f3n no encontrada" }, { status: 404 });
+  const updatePayload: Record<string, any> = {};
+  if (typeof body.currentIndex === "number" && Number.isFinite(body.currentIndex)) {
+    updatePayload.current_index = body.currentIndex;
   }
 
-  const payload = {
-    p_session_id: sessionId,
-    p_user_id: user.id,
-    p_current_index:
-      typeof body.currentIndex === "number" && Number.isFinite(body.currentIndex)
-        ? body.currentIndex
-        : null,
-  };
+  if (!Object.keys(updatePayload).length) {
+    return NextResponse.json({ ok: true });
+  }
 
-  const { error } = await supabase.rpc("finish_exam_session", payload);
+  const { error } = await supabase
+    .from("exam_sessions")
+    .update(updatePayload)
+    .eq("id", sessionId)
+    .eq("user_id", user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

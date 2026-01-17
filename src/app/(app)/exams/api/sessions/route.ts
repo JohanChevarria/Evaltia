@@ -73,6 +73,26 @@ export async function POST(req: Request) {
       const finalCourseId = (topicRow as any).course_id ?? courseId;
       if (!finalCourseId) return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
 
+      // ƒo. Si hay un repaso abierto (no finalizado) de este mismo topic, se reanuda.
+      const { data: existingReview } = await supabase
+        .from("exam_sessions")
+        .select("id, question_count, finished_at, status")
+        .eq("user_id", user.id)
+        .eq("mode", "repaso")
+        .contains("topic_ids", [topicId])
+        .is("finished_at", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingReview?.id && (existingReview as any).status !== "finished") {
+        return NextResponse.json({
+          sessionId: existingReview.id,
+          questionCount: (existingReview as any).question_count ?? 0,
+          resumed: true,
+        });
+      }
+
       // Diagnóstico rápido de lectura questions (RLS / mismatch)
       const diag = await diagnoseQuestionsRead({
         supabase,
@@ -120,6 +140,9 @@ export async function POST(req: Request) {
         time_limit_minutes: null,
         current_index: 0,
         flagged_question_ids: [],
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+        paused_at: null,
       });
 
       if (sessionError) {
@@ -230,6 +253,9 @@ export async function POST(req: Request) {
       time_limit_minutes: safeTimeLimit,
       current_index: 0,
       flagged_question_ids: [],
+      status: "in_progress",
+      started_at: new Date().toISOString(),
+      paused_at: null,
     });
 
     if (sessionError) {

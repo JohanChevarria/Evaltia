@@ -1,4 +1,4 @@
-// /Users/jchevarria/Evaltia/src/app/(onboarding)/university/page.tsx
+﻿// /Users/jchevarria/Evaltia/src/app/(onboarding)/university/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -49,7 +49,7 @@ export default function UniversityOnboardingPage() {
           setLoading(false);
           if (!didNavigateRef.current) {
             didNavigateRef.current = true;
-            router.replace("/auth/login");
+            router.replace("/login");
           }
           return;
         }
@@ -113,7 +113,7 @@ export default function UniversityOnboardingPage() {
     setErrorMsg(null);
 
     if (!selectedMode) {
-      setErrorMsg("Selecciona una opción para continuar.");
+      setErrorMsg("Selecciona una opciÃ³n para continuar.");
       return;
     }
 
@@ -131,7 +131,7 @@ export default function UniversityOnboardingPage() {
       setSaving(false);
       if (!didNavigateRef.current) {
         didNavigateRef.current = true;
-        router.replace("/auth/login");
+        router.replace("/login");
       }
       return;
     }
@@ -159,8 +159,8 @@ export default function UniversityOnboardingPage() {
 
     setSaving(false);
 
-    // ✅ CRÍTICO: NO uses router.refresh aquí (eso te estaba creando loop)
-    // ✅ CAMBIO: si eligió universidad, navega directo a /dashboard/{uni}/main
+    // âœ… CRÃTICO: NO uses router.refresh aquÃ­ (eso te estaba creando loop)
+    // âœ… CAMBIO: si eligiÃ³ universidad, navega directo a /dashboard/{uni}/main
     if (!didNavigateRef.current) {
       didNavigateRef.current = true;
 
@@ -199,10 +199,10 @@ export default function UniversityOnboardingPage() {
 
       <div className="relative z-10 w-full max-w-4xl bg-white shadow-2xl rounded-2xl p-8 space-y-6 text-slate-900">
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-500">Personalización inicial</p>
+          <p className="text-xs font-semibold text-slate-500">PersonalizaciÃ³n inicial</p>
           <h1 className="text-2xl font-bold">Elige tu universidad para personalizar tu experiencia</h1>
           <p className="text-sm text-slate-600">
-            Así adaptamos cursos y prácticas desde el inicio. Es rápido y solo lo harás una vez.
+            AsÃ­ adaptamos cursos y prÃ¡cticas desde el inicio. Es rÃ¡pido y solo lo harÃ¡s una vez.
           </p>
         </div>
 
@@ -261,7 +261,7 @@ export default function UniversityOnboardingPage() {
         >
           <p className="font-semibold">Plan General</p>
           <p className="text-sm text-slate-600 mt-1">
-            Si tu universidad no está en la lista, igual puedes organizar tus prácticas a tu manera.
+            Si tu universidad no estÃ¡ en la lista, igual puedes organizar tus prÃ¡cticas a tu manera.
           </p>
         </button>
 
@@ -277,3 +277,4 @@ export default function UniversityOnboardingPage() {
     </main>
   );
 }
+

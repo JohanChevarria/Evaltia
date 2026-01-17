@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
@@ -6,14 +6,20 @@ import EditorClient from "./EditorClient";
 
 type PageProps = { params: Promise<{ uni: string }> };
 
+type CourseRow = {
+  id: string;
+  name: string;
+  description?: string | null;
+};
+
 export default async function EditorCoursesPage({ params }: PageProps) {
   const supabase = await createClient();
   const { uni } = await params;
 
-  // 1) Sesión
+  // 1) SesiÃ³n
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
   // 2) Perfil y rol
   const { data: profile } = await supabase
@@ -22,14 +28,14 @@ export default async function EditorCoursesPage({ params }: PageProps) {
     .eq("id", user.id)
     .single();
 
-  if (!profile) redirect("/auth/login");
+  if (!profile) redirect("/login");
   if (profile.role !== "admin") redirect("/dashboard/main");
 
   const fallbackPath = profile.university_id
-    ? await getStudioPathForUniversityId(supabase as any, profile.university_id)
+    ? await getStudioPathForUniversityId(supabase, profile.university_id)
     : "/dashboard/main";
 
-  // 3) Universidad por código URL (usmp/upc/...)
+  // 3) Universidad por cÃ³digo URL (usmp/upc/...)
   const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
@@ -68,7 +74,7 @@ export default async function EditorCoursesPage({ params }: PageProps) {
             <span className="text-slate-400">({uniRow.code})</span>
           </p>
           <p className="text-xs text-slate-500 mt-1">
-            Paso 1: elige un curso. Luego verás sus temas y sus preguntas.
+            Paso 1: elige un curso. Luego verÃ¡s sus temas y sus preguntas.
           </p>
         </div>
 
@@ -89,19 +95,19 @@ export default async function EditorCoursesPage({ params }: PageProps) {
 
         {(!courses || courses.length === 0) ? (
           <p className="text-sm text-slate-500 mt-3">
-            Aún no hay cursos creados para esta universidad.
+            AÃºn no hay cursos creados para esta universidad.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-3">
-            {courses.map((c: any) => (
+            {(courses as CourseRow[]).map((c) => (
               <Link
                 key={c.id}
-                href={`/studio/${uniCode}/editor/${c.id}`}   // ✅ ahora es ruta clara
+                href={`/studio/${uniCode}/editor/${c.id}`}   // âœ… ahora es ruta clara
                 className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 p-4 transition"
               >
                 <p className="font-semibold text-slate-900">{c.name}</p>
                 <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                  {c.description || "Sin descripción"}
+                  {c.description || "Sin descripciÃ³n"}
                 </p>
                 <p className="text-xs text-slate-400 mt-3">
                   Click para ver temas y preguntas
@@ -114,3 +120,4 @@ export default async function EditorCoursesPage({ params }: PageProps) {
     </div>
   );
 }
+

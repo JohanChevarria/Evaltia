@@ -16,6 +16,7 @@ export default function AdminTopbar({
   collapsed: boolean;
   onToggleSidebar: () => void;
 }) {
+  void collapsed;
   return (
     <header className="h-14 flex items-center justify-between px-4 bg-white border-b">
       {/* LEFT: toggle + logo + title */}

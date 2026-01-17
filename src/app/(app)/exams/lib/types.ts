@@ -34,7 +34,10 @@ export type ExamSession = {
   current_index: number;
   flagged_question_ids?: string[];
   created_at?: string;
+  started_at?: string | null;
+  paused_at?: string | null;
   finished_at?: string | null;
+  status?: "in_progress" | "paused" | "finished" | "cancelled";
 };
 
 export type ExamAnswer = {

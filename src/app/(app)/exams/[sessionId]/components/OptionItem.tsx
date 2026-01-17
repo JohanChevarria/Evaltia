@@ -26,7 +26,7 @@ export function OptionItem({
   onToggleStrike,
 }: OptionItemProps) {
   const base =
-    "w-full rounded-xl border px-3 py-3 text-left transition bg-white";
+    "w-full rounded-xl border px-3 py-3 text-left transition";
 
   // ✅ paleta sobria
   const stateClass = showCorrect
@@ -35,10 +35,17 @@ export function OptionItem({
       ? "border-rose-300 bg-rose-50"
       : isSelected
         ? "border-slate-900 bg-slate-50"
-        : "border-slate-200 hover:bg-slate-50";
+        : "border-slate-200 bg-white hover:bg-slate-50";
 
-  // ❌ quitamos cursor-not-allowed
-  const interactionClass = "cursor-default";
+  const badgeClass = showCorrect
+    ? "border-emerald-200 bg-emerald-100 text-emerald-900"
+    : showIncorrect
+      ? "border-rose-200 bg-rose-100 text-rose-900"
+      : isSelected
+        ? "border-slate-300 bg-slate-100 text-slate-900"
+        : "border-slate-200 bg-white text-slate-800";
+
+  const interactionClass = isDisabled || striked ? "cursor-not-allowed" : "cursor-pointer";
 
   const strikeClass = striked ? "line-through opacity-60" : "";
 
@@ -53,12 +60,13 @@ export function OptionItem({
         type="button"
         aria-disabled={isDisabled || striked}
         onClick={handleClick}
-        className={`${base} ${stateClass} ${interactionClass}`}
-        style={{ cursor: "default" }} // ✅ fuerza cursor normal SIEMPRE
+        className={`${base} ${stateClass} ${interactionClass} select-none`}
       >
         <div className={`flex items-start justify-between gap-4 ${strikeClass}`}>
           <div className="flex gap-3 min-w-0">
-            <div className="h-8 w-8 rounded-lg border border-slate-200 bg-white grid place-items-center text-sm font-semibold text-slate-800 shadow-inner">
+            <div
+              className={`h-8 w-8 rounded-lg border grid place-items-center text-sm font-semibold shadow-inner ${badgeClass}`}
+            >
               {option.label ?? "?"}
             </div>
 
@@ -85,8 +93,7 @@ export function OptionItem({
         }}
         className={`px-2 py-1 text-slate-500 hover:text-slate-900 select-none ${
           striked ? "opacity-80" : ""
-        }`}
-        style={{ cursor: "default" }} // ✅ tampoco cambia aquí
+        } ${isDisabled ? "cursor-not-allowed" : "cursor-pointer"}`}
         title={striked ? "Quitar tachado" : "Tachar opción"}
         aria-label={striked ? "Quitar tachado" : "Tachar opción"}
       >
@@ -95,3 +102,5 @@ export function OptionItem({
     </div>
   );
 }
+
+

@@ -11,3 +11,30 @@ body {
 body {
   margin: 0;
 }
+
+/* Soft hover scrollbar for internal panels. */
+.scrollbar-soft {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-soft:hover {
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+.scrollbar-soft::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-soft::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-soft::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+.scrollbar-soft:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.45);
+}

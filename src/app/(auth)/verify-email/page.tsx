@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import ResendButton from "./ResendButton";
@@ -12,9 +12,9 @@ type CheckEmailPageProps = {
 export default async function CheckEmailPage({ searchParams }: CheckEmailPageProps) {
   const { email } = await searchParams;
 
-  // 🚫 Si no hay email en la URL, redirigimos a register
+  // ðŸš« Si no hay email en la URL, redirigimos a register
   if (!email) {
-    redirect("/auth/register");
+    redirect("/register");
   }
 
   return (
@@ -58,7 +58,7 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
           </h1>
 
           <p className="text-sm text-slate-600 text-center leading-relaxed max-w-xs">
-            Te enviamos un enlace de verificación a{" "}
+            Te enviamos un enlace de verificaciÃ³n a{" "}
             <span className="font-semibold">{email}</span>. Revisa tu bandeja
             de entrada y carpeta de spam.
           </p>
@@ -70,15 +70,15 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
             href="/login"
             className="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
           >
-            Ya confirmé → Iniciar sesión
+            Ya confirmÃ© â†’ Iniciar sesiÃ³n
           </Link>
 
-          {/* Resend, estilo “secundario” y limpio */}
+          {/* Resend, estilo â€œsecundarioâ€ y limpio */}
           <ResendButton email={email} />
 
           <p className="text-xs text-slate-500 text-center">
-            ¿Correo incorrecto?{" "}
-            <Link href="/auth/register" className="text-indigo-600 underline">
+            Â¿Correo incorrecto?{" "}
+            <Link href="/register" className="text-indigo-600 underline">
               registrarme otra vez
             </Link>
           </p>
@@ -87,3 +87,4 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
     </main>
   );
 }
+

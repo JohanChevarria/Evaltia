@@ -39,7 +39,7 @@ function getDaysMatrix(year: number, monthIndex: number) {
   const matrix: { date: Date; isCurrentMonth: boolean }[][] = [];
 
   const startDate = new Date(year, monthIndex, 1 - (startWeekDay - 1));
-  let current = new Date(startDate);
+  const current = new Date(startDate);
 
   // 6 filas de 7 días para mantener estructura
   for (let week = 0; week < 6; week++) {

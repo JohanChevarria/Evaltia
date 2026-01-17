@@ -21,9 +21,12 @@ type Props = {
   note?: string;
   onSaveNote: (text: string) => Promise<void>;
   savingNote: boolean;
+  reviewIncorrectLabels?: Set<string>;
+  reviewCorrectLabel?: string | null;
 };
 
 const UI_LABELS = ["A", "B", "C", "D", "E"] as const;
+const EMPTY_REVIEW_SET = new Set<string>();
 
 /**
  * ✅ Highlight estilo AMBOSS (amarillo) - estable
@@ -136,6 +139,8 @@ export function QuestionArea({
   note,
   onSaveNote,
   savingNote,
+  reviewIncorrectLabels,
+  reviewCorrectLabel,
 }: Props) {
   const [showHint, setShowHint] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -165,7 +170,10 @@ export function QuestionArea({
   };
 
   // ❌ simulacro no muestra explicación (por ahora)
-  const canShowExplanation = mode !== "simulacro" && showExplanation && !!selectedLabel;
+  const canShowExplanation = mode !== "simulacro" && showExplanation;
+  const isReview = mode === "repaso";
+  const reviewIncorrect = isReview ? (reviewIncorrectLabels ?? EMPTY_REVIEW_SET) : EMPTY_REVIEW_SET;
+  const reviewCorrect = isReview ? (reviewCorrectLabel ?? null) : null;
 
   // ✅ 1) Fuerza letras A–E por ORDEN VISUAL (index)
   const uiOptions = useMemo(() => {
@@ -178,21 +186,35 @@ export function QuestionArea({
   // ✅ 2) Estados usando selectedLabel UI (A–E), no opt.label real
   const optionStates = useMemo(() => {
     const sel = (selectedLabel ?? "").toUpperCase();
+    const correctLabel = (reviewCorrect ?? "").toUpperCase();
 
     return uiOptions.map(({ opt, uiLabel }) => {
       const label = uiLabel.toUpperCase();
       const isSelected = sel !== "" && sel === label;
+      const isIncorrectReview = isReview && reviewIncorrect.has(label);
+      const isCorrectReview = isReview && correctLabel !== "" && correctLabel === label;
 
       return {
         opt,
         uiLabel,
         isSelected,
-        showIncorrect: showFeedback && isSelected && !opt.is_correct,
-        showCorrect: showFeedback && isSelected && !!opt.is_correct,
-        showThisExplanation: canShowExplanation && isSelected,
+        showIncorrect: isReview ? isIncorrectReview : showFeedback && isSelected && !opt.is_correct,
+        showCorrect: isReview ? isCorrectReview : showFeedback && isSelected && !!opt.is_correct,
+        showThisExplanation: isReview
+          ? showExplanation && (isIncorrectReview || isCorrectReview)
+          : canShowExplanation && isSelected,
       };
     });
-  }, [uiOptions, selectedLabel, showFeedback, canShowExplanation]);
+  }, [
+    uiOptions,
+    selectedLabel,
+    showFeedback,
+    showExplanation,
+    canShowExplanation,
+    isReview,
+    reviewIncorrectLabels,
+    reviewCorrectLabel,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -319,3 +341,4 @@ export function QuestionArea({
     </div>
   );
 }
+

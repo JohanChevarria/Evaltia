@@ -1,4 +1,4 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Brain, LineChart, Clock } from "lucide-react";
 import type { ReactNode } from "react";
@@ -43,7 +43,7 @@ export function HeroEvaltia() {
         <div className="max-w-3xl space-y-8">
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white">
-              Tu camino más fácil
+              Tu camino mÃ¡s fÃ¡cil
               <span className="block">para estudiar medicina.</span>
             </h1>
 
@@ -55,39 +55,39 @@ export function HeroEvaltia() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* CTA principal: igual que el botón del header */}
+            {/* CTA principal: igual que el botÃ³n del header */}
             <Link
-              href="/auth/register"
+              href="/register"
               className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#06121F] shadow-lg shadow-slate-900/40 hover:bg-slate-100 transition"
             >
               Probar demo
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
 
-            {/* Botón secundario glassy */}
+            {/* BotÃ³n secundario glassy */}
             <Link
               href="#features"
               className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-medium text-slate-50 hover:bg-white/20 transition backdrop-blur-sm"
             >
-              Ver cómo funciona
+              Ver cÃ³mo funciona
             </Link>
           </div>
 
           <p className="text-xs sm:text-sm text-slate-100/80">
             Bancos construidos por estudiantes de medicina, con foco en los
-            temas que realmente entran en tus exámenes.
+            temas que realmente entran en tus exÃ¡menes.
           </p>
         </div>
 
-        {/* SECCIÓN: Qué ofrece Evaltia */}
+        {/* SECCIÃ“N: QuÃ© ofrece Evaltia */}
         <section id="features" className="space-y-8">
           <div className="max-w-3xl space-y-3">
             <h2 className="text-2xl md:text-3xl font-semibold text-white">
-              Elige cuándo y cuánto estudiar.
+              Elige cuÃ¡ndo y cuÃ¡nto estudiar.
             </h2>
             <p className="text-sm sm:text-base text-slate-100/90">
               Evaltia te da el control: arma simulacros por curso y tema, revisa
-              tu progreso y decide si haces una práctica rápida de 10 preguntas
+              tu progreso y decide si haces una prÃ¡ctica rÃ¡pida de 10 preguntas
               o un simulacro largo antes del examen.
             </p>
           </div>
@@ -95,52 +95,52 @@ export function HeroEvaltia() {
           <div className="grid gap-6 md:grid-cols-3">
             <FeatureCard
               icon={<Brain className="h-5 w-5" />}
-              title="Práctica por tema"
-              text="Organizado por curso y tema, para que repases justo lo que estás viendo esta semana."
+              title="PrÃ¡ctica por tema"
+              text="Organizado por curso y tema, para que repases justo lo que estÃ¡s viendo esta semana."
             />
             <FeatureCard
               icon={<LineChart className="h-5 w-5" />}
               title="Progreso claro"
-              text="Detecta rápido qué cursos llevas fuertes y cuáles necesitan refuerzo antes del parcial o final."
+              text="Detecta rÃ¡pido quÃ© cursos llevas fuertes y cuÃ¡les necesitan refuerzo antes del parcial o final."
             />
             <FeatureCard
               icon={<Clock className="h-5 w-5" />}
               title="Se adapta a tu tiempo"
-              text="Bloques cortos entre clases o sesiones largas: tú eliges el ritmo, Evaltia se encarga del resto."
+              text="Bloques cortos entre clases o sesiones largas: tÃº eliges el ritmo, Evaltia se encarga del resto."
             />
           </div>
         </section>
 
-        {/* SECCIÓN: Adaptada a tu universidad + demo */}
+        {/* SECCIÃ“N: Adaptada a tu universidad + demo */}
         <section className="grid gap-10 md:grid-cols-[minmax(0,1.3fr),minmax(0,1fr)] items-start">
           <div className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-semibold text-white">
-              Adaptada a cómo se enseña medicina donde estudias.
+              Adaptada a cÃ³mo se enseÃ±a medicina donde estudias.
             </h2>
             <p className="text-sm sm:text-base text-slate-100/90">
-              Empezamos con la malla de Histología y Bioquímica de la USMP y
-              luego sumaremos más universidades. La idea es que Evaltia hable el
-              mismo idioma que tu sílabo y tu cronograma real.
+              Empezamos con la malla de HistologÃ­a y BioquÃ­mica de la USMP y
+              luego sumaremos mÃ¡s universidades. La idea es que Evaltia hable el
+              mismo idioma que tu sÃ­labo y tu cronograma real.
             </p>
             <ul className="space-y-2 text-sm text-slate-100/90">
-              <li>• Temas alineados a sílabos reales, no nombres genéricos.</li>
-              <li>• Vista de progreso por curso y por tema.</li>
-              <li>• Pensado para parciales, finales y simulacros tipo ENAM.</li>
+              <li>â€¢ Temas alineados a sÃ­labos reales, no nombres genÃ©ricos.</li>
+              <li>â€¢ Vista de progreso por curso y por tema.</li>
+              <li>â€¢ Pensado para parciales, finales y simulacros tipo ENAM.</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-5 space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
-              Demo rápida
+              Demo rÃ¡pida
             </p>
-            <p className="text-sm text-slate-50">En la demo podrás:</p>
+            <p className="text-sm text-slate-50">En la demo podrÃ¡s:</p>
             <ul className="space-y-2 text-sm text-slate-100">
-              <li>• Navegar por tu hub como si fueras un estudiante real.</li>
-              <li>• Ver cómo se organizan cursos, temas y prácticas.</li>
-              <li>• Probar la sensación de resolver preguntas dentro de Evaltia.</li>
+              <li>â€¢ Navegar por tu hub como si fueras un estudiante real.</li>
+              <li>â€¢ Ver cÃ³mo se organizan cursos, temas y prÃ¡cticas.</li>
+              <li>â€¢ Probar la sensaciÃ³n de resolver preguntas dentro de Evaltia.</li>
             </ul>
             <Link
-              href="/auth/register"
+              href="/register"
               className="inline-flex mt-2 items-center justify-center rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 px-5 py-2.5 text-sm font-semibold text-white hover:from-indigo-400 hover:to-cyan-300 transition"
             >
               Probar demo ahora
@@ -170,3 +170,4 @@ function FeatureCard({ icon, title, text }: FeatureCardProps) {
     </div>
   );
 }
+

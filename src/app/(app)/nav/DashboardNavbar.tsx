@@ -29,6 +29,12 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
     [base]
   );
 
+  useEffect(() => {
+    tabs.forEach((tab) => router.prefetch(tab.href));
+    router.prefetch(`${baseAccount}/amigos`);
+    router.prefetch(`${baseAccount}/configuracion`);
+  }, [router, tabs, baseAccount]);
+
   // Dropdown control
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);

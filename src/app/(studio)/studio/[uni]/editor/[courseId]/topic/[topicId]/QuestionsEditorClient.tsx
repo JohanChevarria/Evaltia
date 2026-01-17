@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -22,8 +22,8 @@ type Props = {
   topicTitle: string;
 
   concepts: { id: string; title: string; order_number?: number }[];
-  questions: any[];
-  options: any[];
+  questions: QuestionRow[];
+  options: OptionRow[];
 };
 
 type DraftOption = {
@@ -34,14 +34,50 @@ type DraftOption = {
   is_correct: boolean;
 };
 
+type QuestionType =
+  | "default"
+  | "matching"
+  | "clinical_case"
+  | "premise_reason";
+
+type MatchingData = {
+  left: string[];
+  right: string[];
+};
+
+type QuestionRow = {
+  id: string;
+  topic_id?: string | null;
+  text?: string | null;
+  difficulty?: string | null;
+  question_type?: string | null;
+  matching_data?: MatchingData | Record<string, unknown> | null;
+  concept_id?: string | null;
+  conceptId?: string | null;
+  concept?: string | null;
+};
+
+type OptionRow = {
+  id: string;
+  question_id: string;
+  label?: string | null;
+  text?: string | null;
+  explanation?: string | null;
+  is_correct?: boolean | null;
+};
+
 type Draft = {
   questionText: string;
   options: DraftOption[];
+  matchingLeft: string[];
+  matchingRight: string[];
 };
 
 type Difficulty = "easy" | "medium" | "hard";
 
 const BASE_LABELS = ["A", "B", "C", "D", "E"];
+const MATCHING_LEFT_LABELS = ["A", "B", "C", "D"];
+const MATCHING_RIGHT_LABELS = ["I", "II", "III", "IV"];
 
 function nextLabel(existing: string[]) {
   const labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -55,7 +91,7 @@ function clampText(input: string, max = 140) {
   return s.slice(0, max - 1) + "…";
 }
 
-function normalizeDifficulty(raw: any): Difficulty {
+function normalizeDifficulty(raw: unknown): Difficulty {
   const v = String(raw ?? "").toLowerCase().trim();
   if (v === "easy" || v === "facil" || v === "fácil") return "easy";
   if (v === "hard" || v === "dificil" || v === "difícil") return "hard";
@@ -73,6 +109,40 @@ function difficultyRank(d: Difficulty) {
   if (d === "easy") return 0;
   if (d === "medium") return 1;
   return 2; // hard
+}
+
+function normalizeQuestionType(raw: unknown): QuestionType {
+  const v = String(raw ?? "").toLowerCase().trim();
+  if (v === "matching") return "matching";
+  if (v === "clinical_case") return "clinical_case";
+  if (v === "premise_reason") return "premise_reason";
+  return "default";
+}
+
+function questionTypeLabel(t: QuestionType) {
+  if (t === "matching") return "Relacionar conceptos";
+  if (t === "clinical_case") return "Caso clÃ­nico";
+  if (t === "premise_reason") return "Premisa/RazÃ³n";
+  return "Predeterminado";
+}
+
+function normalizeMatchingSide(values: unknown, trim = false) {
+  const base = Array.isArray(values) ? values : [];
+  const out = base.map((v) => {
+    const text = String(v ?? "");
+    return trim ? text.trim() : text;
+  });
+  while (out.length < 4) out.push("");
+  return out.slice(0, 4);
+}
+
+function normalizeMatchingData(raw: unknown): MatchingData {
+  const obj =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  return {
+    left: normalizeMatchingSide(obj.left),
+    right: normalizeMatchingSide(obj.right),
+  };
 }
 
 function groupMeta(d: Difficulty) {
@@ -190,22 +260,41 @@ export default function QuestionsEditorClient({
 
   // ✅ Dropdown de dificultad (1 abierto a la vez)
   const [difficultyOpenId, setDifficultyOpenId] = useState<string | null>(null);
+  const [questionTypeOpenId, setQuestionTypeOpenId] = useState<string | null>(
+    null
+  );
+
+  const [conceptStatus, setConceptStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const conceptStatusTimer = useRef<number | null>(null);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setDifficultyOpenId(null);
+      if (e.key === "Escape") {
+        setDifficultyOpenId(null);
+        setQuestionTypeOpenId(null);
+      }
     }
 
     function onMouseDown(e: MouseEvent) {
-      if (!difficultyOpenId) return;
-
       const target = e.target as HTMLElement | null;
       if (!target) return;
 
-      const inside = target.closest(
-        `[data-difficulty-root="${difficultyOpenId}"]`
-      );
-      if (!inside) setDifficultyOpenId(null);
+      if (difficultyOpenId) {
+        const insideDifficulty = target.closest(
+          `[data-difficulty-root="${difficultyOpenId}"]`
+        );
+        if (!insideDifficulty) setDifficultyOpenId(null);
+      }
+
+      if (questionTypeOpenId) {
+        const insideType = target.closest(
+          `[data-question-type-root="${questionTypeOpenId}"]`
+        );
+        if (!insideType) setQuestionTypeOpenId(null);
+      }
     }
 
     document.addEventListener("keydown", onKeyDown);
@@ -215,7 +304,17 @@ export default function QuestionsEditorClient({
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("mousedown", onMouseDown);
     };
-  }, [difficultyOpenId]);
+  }, [difficultyOpenId, questionTypeOpenId]);
+
+  function pushConceptStatus(type: "success" | "error", message: string) {
+    setConceptStatus({ type, message });
+    if (conceptStatusTimer.current) {
+      window.clearTimeout(conceptStatusTimer.current);
+    }
+    conceptStatusTimer.current = window.setTimeout(() => {
+      setConceptStatus(null);
+    }, 3500);
+  }
 
   async function setDifficulty(questionId: string, d: Difficulty) {
     setBusy(true);
@@ -223,6 +322,40 @@ export default function QuestionsEditorClient({
       const { error } = await supabase
         .from("questions")
         .update({ difficulty: d })
+        .eq("id", questionId)
+        .eq("university_id", universityId);
+
+      if (error) {
+        alert(error.message);
+        return;
+      }
+
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function setQuestionType(
+    questionId: string,
+    t: QuestionType,
+    currentMatching: unknown
+  ) {
+    setBusy(true);
+    try {
+      const payload: { question_type: QuestionType; matching_data?: MatchingData } =
+        { question_type: t };
+      if (t === "matching") {
+        const normalized = normalizeMatchingData(currentMatching ?? {});
+        payload.matching_data = {
+          left: normalized.left,
+          right: normalized.right,
+        };
+      }
+
+      const { error } = await supabase
+        .from("questions")
+        .update(payload)
         .eq("id", questionId)
         .eq("university_id", universityId);
 
@@ -271,7 +404,6 @@ export default function QuestionsEditorClient({
       const arr = JSON.parse(raw) as string[];
       setPinnedIds(new Set(arr));
     } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinKey]);
 
   function persistPins(next: Set<string>) {
@@ -286,7 +418,7 @@ export default function QuestionsEditorClient({
   }, [conceptsOrdered, selectedConceptId]);
 
   const optionsByQ = useMemo(() => {
-    const map = new Map<string, any[]>();
+    const map = new Map<string, OptionRow[]>();
     for (const opt of options) {
       const arr = map.get(opt.question_id) ?? [];
       arr.push(opt);
@@ -302,11 +434,11 @@ export default function QuestionsEditorClient({
   }, [options]);
 
   // ✅ filtro por concepto estable
-  const filteredQuestions = useMemo(() => {
+  const filteredQuestions = useMemo<QuestionRow[]>(() => {
     if (!selectedConceptId) return [];
     const selected = String(selectedConceptId);
 
-    return (questions ?? []).filter((q: any) => {
+    return (questions ?? []).filter((q) => {
       const cid = q?.concept_id ?? q?.conceptId ?? q?.concept ?? null;
       return cid !== null && String(cid) === selected;
     });
@@ -317,7 +449,7 @@ export default function QuestionsEditorClient({
    * - Dentro de cada dificultad: pineadas arriba, luego estable por id
    * - Y mostramos divisores por dificultad
    */
-  const orderedQuestions = useMemo(() => {
+  const orderedQuestions = useMemo<QuestionRow[]>(() => {
     const list = [...filteredQuestions];
     list.sort((a, b) => {
       const ad = difficultyRank(normalizeDifficulty(a?.difficulty));
@@ -383,7 +515,10 @@ export default function QuestionsEditorClient({
 
   /** ✅ FIX: Renombrar funcional + no reordena visualmente */
   async function renameConcept() {
-    if (!selectedConcept) return alert("Primero elige un concepto.");
+    if (!selectedConcept) {
+      pushConceptStatus("error", "Primero elige un concepto.");
+      return;
+    }
 
     const currentTitle = selectedConcept.title ?? "";
     const newTitle = prompt("Nuevo nombre del concepto:", currentTitle);
@@ -394,13 +529,25 @@ export default function QuestionsEditorClient({
 
     setBusy(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("concepts")
         .update({ title: cleaned })
         .eq("id", selectedConcept.id)
-        .eq("university_id", universityId);
+        .eq("university_id", universityId)
+        .select("id");
 
-      if (error) return alert(error.message);
+      if (error) {
+        pushConceptStatus("error", `No se pudo renombrar: ${error.message}`);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        pushConceptStatus(
+          "error",
+          "No se pudo renombrar (verifica permisos/RLS)."
+        );
+        return;
+      }
 
       // ✅ update inmediato del UI (sin depender de refresh)
       setConceptTitleOverride((prev) => ({
@@ -409,6 +556,7 @@ export default function QuestionsEditorClient({
       }));
 
       // ✅ refresca data server (por consistencia), pero el orden visual queda por order_number
+      pushConceptStatus("success", "Concepto renombrado.");
       await refresh();
     } finally {
       setBusy(false);
@@ -467,6 +615,7 @@ export default function QuestionsEditorClient({
           concept_id: selectedConceptId,
           text: "Nueva pregunta…",
           difficulty: "medium",
+          question_type: "default",
         })
         .select("id")
         .single();
@@ -498,7 +647,7 @@ export default function QuestionsEditorClient({
   }
 
   // ✅ startEdit robusto: lee options reales, crea A–E si faltan
-  async function startEdit(q: any) {
+  async function startEdit(q: QuestionRow) {
     setBusy(true);
     try {
       const { data: existing, error } = await supabase
@@ -509,7 +658,7 @@ export default function QuestionsEditorClient({
 
       if (error) return alert(error.message);
 
-      const existingLabels = new Set((existing ?? []).map((o: any) => o.label));
+      const existingLabels = new Set((existing ?? []).map((o) => o.label));
       const missing = BASE_LABELS.filter((L) => !existingLabels.has(L));
 
       if (missing.length > 0) {
@@ -535,21 +684,23 @@ export default function QuestionsEditorClient({
       if (finalErr) return alert(finalErr.message);
 
       const draftOptions = (finalOpts ?? [])
-        .map((o: any) => ({
+        .map((o) => ({
           id: o.id,
           label: o.label ?? "",
           text: o.text ?? "",
           explanation: o.explanation ?? "",
           is_correct: !!o.is_correct,
         }))
-        .sort((a: any, b: any) =>
-          String(a.label).localeCompare(String(b.label))
-        );
+        .sort((a, b) => String(a.label).localeCompare(String(b.label)));
+
+      const matching = normalizeMatchingData(q?.matching_data);
 
       setEditingQuestionId(q.id);
       setDraft({
         questionText: q.text ?? "",
         options: draftOptions,
+        matchingLeft: matching.left,
+        matchingRight: matching.right,
       });
     } finally {
       setBusy(false);
@@ -560,7 +711,7 @@ export default function QuestionsEditorClient({
   useEffect(() => {
     if (!pendingEditId) return;
 
-    const q = (questions ?? []).find((x: any) => x.id === pendingEditId);
+    const q = (questions ?? []).find((x) => x.id === pendingEditId);
     if (!q) return;
 
     setPendingEditId(null);
@@ -578,13 +729,32 @@ export default function QuestionsEditorClient({
     setDraft(null);
   }
 
-  function toggleCorrect(label: string) {
+  function toggleCorrect(label?: string | null) {
     if (!draft) return;
+    if (!label) return;
     setDraft({
       ...draft,
       options: draft.options.map((o) =>
         o.label === label ? { ...o, is_correct: !o.is_correct } : o
       ),
+    });
+  }
+
+  function updateMatchingLeft(index: number, value: string) {
+    setDraft((d) => {
+      if (!d) return d;
+      const next = normalizeMatchingSide(d.matchingLeft ?? []);
+      next[index] = value;
+      return { ...d, matchingLeft: next };
+    });
+  }
+
+  function updateMatchingRight(index: number, value: string) {
+    setDraft((d) => {
+      if (!d) return d;
+      const next = normalizeMatchingSide(d.matchingRight ?? []);
+      next[index] = value;
+      return { ...d, matchingRight: next };
     });
   }
 
@@ -669,25 +839,42 @@ export default function QuestionsEditorClient({
     }
   }
 
-  async function saveEdit(questionId: string) {
+  async function saveEdit(q: QuestionRow) {
     if (!draft) return;
+    if (!q?.id) return;
 
-    const nonEmpty = draft.options.filter(
-      (o) => (o.text ?? "").trim().length > 0
-    );
-    if (nonEmpty.length < 5) {
-      return alert("Debe haber mínimo 5 opciones con texto (no vacías).");
+    const questionType = normalizeQuestionType(q?.question_type);
+    const isMatching = questionType === "matching";
+
+    if (!isMatching) {
+      const nonEmpty = draft.options.filter(
+        (o) => (o.text ?? "").trim().length > 0
+      );
+      if (nonEmpty.length < 5) {
+        return alert("Debe haber mínimo 5 opciones con texto (no vacías).");
+      }
+
+      const correctCount = draft.options.filter((o) => o.is_correct).length;
+      if (correctCount < 1)
+        return alert("Marca al menos 1 opción como correcta.");
     }
-
-    const correctCount = draft.options.filter((o) => o.is_correct).length;
-    if (correctCount < 1) return alert("Marca al menos 1 opción como correcta.");
 
     setBusy(true);
     try {
+      const payload: { text: string; matching_data?: MatchingData } = {
+        text: draft.questionText.trim(),
+      };
+      if (isMatching) {
+        payload.matching_data = {
+          left: normalizeMatchingSide(draft.matchingLeft ?? [], true),
+          right: normalizeMatchingSide(draft.matchingRight ?? [], true),
+        };
+      }
+
       const { error: qErr } = await supabase
         .from("questions")
-        .update({ text: draft.questionText.trim() })
-        .eq("id", questionId)
+        .update(payload)
+        .eq("id", q.id)
         .eq("university_id", universityId);
 
       if (qErr) return alert(qErr.message);
@@ -801,7 +988,7 @@ export default function QuestionsEditorClient({
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return "";
     if (ids.length === 1) {
-      const q = (questions ?? []).find((x: any) => x.id === ids[0]);
+    const q = (questions ?? []).find((x) => x.id === ids[0]);
       return q?.text ? clampText(q.text, 160) : "Pregunta seleccionada";
     }
     return `${ids.length} preguntas seleccionadas`;
@@ -843,6 +1030,7 @@ export default function QuestionsEditorClient({
   }
 
   const canAddQuestion = !!selectedConceptId && !busy;
+  const shouldScrollQuestions = orderedQuestions.length > 10;
 
   return (
     <div className="space-y-5">
@@ -934,6 +1122,18 @@ export default function QuestionsEditorClient({
           </div>
         </div>
 
+        {conceptStatus ? (
+          <div
+            className={`mt-2 text-xs px-3 py-2 rounded-lg border ${
+              conceptStatus.type === "success"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-red-50 border-red-200 text-red-700"
+            }`}
+          >
+            {conceptStatus.message}
+          </div>
+        ) : null}
+
         {selectMode && selectedIds.size > 0 && (
           <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm text-slate-700">
@@ -993,14 +1193,26 @@ export default function QuestionsEditorClient({
                 <b>“Agregar pregunta”</b>.
               </div>
             ) : (
-              <div className="divide-y">
-                {orderedQuestions.map((q: any, idx: number) => {
+              <div
+                className={
+                  shouldScrollQuestions
+                    ? "max-h-[70vh] overflow-y-auto pr-2 scrollbar-soft"
+                    : ""
+                }
+              >
+                <div className="divide-y">
+                  {orderedQuestions.map((q, idx) => {
                   const qOpts = optionsByQ.get(q.id) ?? [];
                   const isEditing = editingQuestionId === q.id;
                   const isPinned = pinnedIds.has(q.id);
                   const isChecked = selectedIds.has(q.id);
 
                   const diff: Difficulty = normalizeDifficulty(q?.difficulty);
+                  const questionType: QuestionType = normalizeQuestionType(
+                    q?.question_type
+                  );
+                  const isMatching = questionType === "matching";
+                  const matching = normalizeMatchingData(q?.matching_data);
 
                   const prev = orderedQuestions[idx - 1];
                   const prevDiff: Difficulty | null = prev
@@ -1100,7 +1312,7 @@ export default function QuestionsEditorClient({
                                 {!selectMode && isEditing ? (
                                   <div className="flex flex-col items-end gap-2">
                                     <button
-                                      onClick={() => saveEdit(q.id)}
+                                      onClick={() => saveEdit(q)}
                                       disabled={busy}
                                       className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
                                     >
@@ -1136,7 +1348,7 @@ export default function QuestionsEditorClient({
                                 </span>
                               </div>
 
-                              {/* ✅ Área “Nivel” más pequeña y en 2 columnas con mock “Tipo de pregunta” */}
+                              {/* ✅ Área “Nivel” más pequeña y en 2 columnas con selector de “Tipo de pregunta” */}
                               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {/* NIVEL */}
                                 <div
@@ -1198,26 +1410,70 @@ export default function QuestionsEditorClient({
                                     </div>
                                   ) : null}
                                 </div>
-
-                                {/* MOCK: TIPO DE PREGUNTA (para tu siguiente feature) */}
-                                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                                {/* TIPO DE PREGUNTA */}
+                                <div
+                                  className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                                  data-question-type-root={String(q.id)}
+                                >
                                   <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
                                     Tipo de pregunta
                                   </div>
                                   <button
                                     type="button"
-                                    disabled
-                                    className="w-full px-3 py-2 text-left flex items-center justify-between opacity-70 cursor-not-allowed"
+                                    onClick={() =>
+                                      setQuestionTypeOpenId((prev) =>
+                                        prev === String(q.id) ? null : String(q.id)
+                                      )
+                                    }
+                                    disabled={busy}
+                                    className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-50"
                                   >
                                     <span className="text-sm font-semibold text-slate-800">
-                                      (Próximamente)
+                                      {questionTypeLabel(questionType)}
                                     </span>
                                     <span className="text-slate-400 text-lg leading-none">
                                       ▾
                                     </span>
                                   </button>
-                                </div>
 
+                                  {questionTypeOpenId === String(q.id) ? (
+                                    <div className="border-t border-slate-200">
+                                      {(
+                                        [
+                                          { v: "default", t: "Predeterminado" },
+                                          { v: "matching", t: "Relacionar conceptos" },
+                                          { v: "clinical_case", t: "Caso clínico" },
+                                          { v: "premise_reason", t: "Premisa/Razón" },
+                                        ] as const
+                                      ).map((x) => {
+                                        const active = questionType === x.v;
+                                        return (
+                                          <button
+                                            key={x.v}
+                                            type="button"
+                                            onClick={async () => {
+                                              await setQuestionType(
+                                                q.id,
+                                                x.v,
+                                                q?.matching_data
+                                              );
+                                              setQuestionTypeOpenId(null);
+                                            }}
+                                            disabled={busy}
+                                            className={`w-full text-left px-3 py-2 text-sm font-semibold border-b border-slate-100 last:border-b-0
+                                              ${
+                                                active
+                                                  ? "bg-slate-100 text-slate-900"
+                                                  : "bg-white text-slate-700 hover:bg-slate-50"
+                                              }`}
+                                          >
+                                            {x.t}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null}
+                                </div>
                                 {/* Etiquetas (próximamente) */}
                                 <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
                                   <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
@@ -1232,6 +1488,86 @@ export default function QuestionsEditorClient({
                           </div>
 
                           <div className="col-span-12 md:col-span-7 space-y-3">
+                            {isMatching ? (
+                              <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
+                                  Relacionar conceptos
+                                </div>
+                                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                                      Conceptos
+                                    </div>
+                                    {MATCHING_LEFT_LABELS.map((label, idx) => {
+                                      const value = isEditing
+                                        ? draft?.matchingLeft?.[idx] ?? ""
+                                        : matching.left[idx] ?? "";
+                                      return (
+                                        <div key={label} className="flex items-start gap-2">
+                                          <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
+                                            {label}
+                                          </span>
+                                          {isEditing ? (
+                                            <input
+                                              value={value}
+                                              onChange={(e) =>
+                                                updateMatchingLeft(idx, e.target.value)
+                                              }
+                                              className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                              placeholder={`Concepto ${label}`}
+                                            />
+                                          ) : (
+                                            <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                              {value ? (
+                                                value
+                                              ) : (
+                                                <span className="text-slate-400">[vacío]</span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                                      Definiciones
+                                    </div>
+                                    {MATCHING_RIGHT_LABELS.map((label, idx) => {
+                                      const value = isEditing
+                                        ? draft?.matchingRight?.[idx] ?? ""
+                                        : matching.right[idx] ?? "";
+                                      return (
+                                        <div key={label} className="flex items-start gap-2">
+                                          <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
+                                            {label}
+                                          </span>
+                                          {isEditing ? (
+                                            <input
+                                              value={value}
+                                              onChange={(e) =>
+                                                updateMatchingRight(idx, e.target.value)
+                                              }
+                                              className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                              placeholder={`Definición ${label}`}
+                                            />
+                                          ) : (
+                                            <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                              {value ? (
+                                                value
+                                              ) : (
+                                                <span className="text-slate-400">[vacío]</span>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : null}
+
                             <div className="rounded-xl border border-slate-200 overflow-hidden">
                               <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
                                 Opciones (mínimo 5) — 1 o más correctas
@@ -1239,7 +1575,7 @@ export default function QuestionsEditorClient({
 
                               <div className="divide-y">
                                 {(isEditing ? draft?.options ?? [] : qOpts).map(
-                                  (o: any) => {
+                                  (o) => {
                                     const isCorrectView =
                                       !isEditing && !!o?.is_correct;
 
@@ -1351,6 +1687,7 @@ export default function QuestionsEditorClient({
                     </div>
                   );
                 })}
+                </div>
               </div>
             )}
           </section>
@@ -1485,3 +1822,11 @@ export default function QuestionsEditorClient({
     </div>
   );
 }
+
+
+
+
+
+
+
+

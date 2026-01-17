@@ -1,4 +1,4 @@
-// src/app/(app)/dashboard/[uni]/main/cursos/page.tsx
+﻿// src/app/(app)/dashboard/[uni]/main/cursos/page.tsx
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -18,7 +18,7 @@ export default async function DashboardCursosPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/login");
+  if (!user) redirect("/login");
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
@@ -26,11 +26,11 @@ export default async function DashboardCursosPage({
     .eq("id", user.id)
     .single();
 
-  if (profileError || !profile) redirect("/auth/login");
+  if (profileError || !profile) redirect("/login");
 
   if (!profile.university_onboarding_completed) redirect("/onboarding/university");
 
-  // ✅ fail-safe: evita query con null
+  // âœ… fail-safe: evita query con null
   if (!profile.university_id) redirect("/onboarding/university");
   const uniId = profile.university_id;
 
@@ -66,7 +66,7 @@ export default async function DashboardCursosPage({
                 {c.description ? (
                   <p className="text-xs text-slate-600 mt-1">{c.description}</p>
                 ) : (
-                  <p className="text-xs text-slate-500 mt-1">Sin descripción</p>
+                  <p className="text-xs text-slate-500 mt-1">Sin descripciÃ³n</p>
                 )}
               </Link>
             ))}
@@ -76,3 +76,4 @@ export default async function DashboardCursosPage({
     </main>
   );
 }
+

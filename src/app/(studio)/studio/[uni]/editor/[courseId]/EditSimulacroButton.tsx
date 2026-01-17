@@ -21,6 +21,7 @@ export default function EditSimulacroButton({
   const [open, setOpen] = useState(false);
   const [active, setActive] =
     useState<"preguntas" | "cronometro">("preguntas");
+  const tabs = ["preguntas", "cronometro"] as const;
 
   const [questions, setQuestions] = useState(initialQuestions);
   const [minutes, setMinutes] = useState(initialMinutes);
@@ -124,10 +125,10 @@ export default function EditSimulacroButton({
 
                 {/* tabs */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
-                  {["preguntas", "cronometro"].map((t) => (
+                  {tabs.map((t) => (
                     <button
                       key={t}
-                      onClick={() => setActive(t as any)}
+                      onClick={() => setActive(t)}
                       className={`rounded-xl px-3 py-2 text-sm font-semibold border ${
                         active === t
                           ? "bg-indigo-600 text-white"

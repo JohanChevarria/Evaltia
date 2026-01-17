@@ -11,7 +11,7 @@ export async function getSessionPayload(
   const { data: session, error: sessionError } = await supabase
     .from("exam_sessions")
     .select(
-      "id, user_id, university_id, course_id, name, mode, topic_ids, question_count, timed, time_limit_minutes, current_index, flagged_question_ids, created_at, finished_at"
+      "id, user_id, university_id, course_id, name, mode, topic_ids, question_count, timed, time_limit_minutes, current_index, flagged_question_ids, created_at, started_at, paused_at, finished_at, status"
     )
     .eq("id", sessionId)
     .eq("user_id", userId)

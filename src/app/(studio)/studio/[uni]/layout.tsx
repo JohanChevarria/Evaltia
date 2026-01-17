@@ -1,11 +1,11 @@
-export const dynamic = "force-dynamic";
+﻿export const dynamic = "force-dynamic";
 
 import React from "react";
 import { redirect } from "next/navigation";
 import AdminShell from "@/app/(studio)/components/AdminShell";
 import { createClient } from "@/lib/supabase/server";
 
-const LOGIN_PATH = "/auth/login";
+const LOGIN_PATH = "/login";
 const FALLBACK_PATH = "/dashboard/main";
 
 // Temas por universidad (puedes cambiar colores cuando quieras)
@@ -80,3 +80,4 @@ export default async function StudioLayout({
     </AdminShell>
   );
 }
+

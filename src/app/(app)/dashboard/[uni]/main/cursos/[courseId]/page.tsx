@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -17,6 +17,13 @@ type TopicRow = {
   order_number?: number | null;
 };
 
+type TopicProgress = {
+  total: number;
+  correct: number;
+  incorrect: number;
+  answered: number;
+};
+
 function normalizeIncludes(includes: any): string {
   if (!includes) return "";
   if (Array.isArray(includes)) return includes.join(", ");
@@ -32,7 +39,7 @@ export default function CursoDetallePage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
-  // ✅ En client, usa useParams() (evita params Promise)
+  // âœ… En client, usa useParams() (evita params Promise)
   const params = useParams<{ uni: string; courseId: string }>();
 
   const courseId = (params?.courseId ?? "").toString();
@@ -43,6 +50,7 @@ export default function CursoDetallePage() {
 
   const [course, setCourse] = useState<CourseRow | null>(null);
   const [topics, setTopics] = useState<TopicRow[]>([]);
+  const [progressByTopic, setProgressByTopic] = useState<Record<string, TopicProgress>>({});
   const [examOpen, setExamOpen] = useState(false);
   const [reviewLoadingId, setReviewLoadingId] = useState<string | null>(null);
   const [reviewErrors, setReviewErrors] = useState<Record<string, string>>({});
@@ -60,16 +68,26 @@ export default function CursoDetallePage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          router.push("/auth/login");
+          router.push("/login");
           return;
         }
 
-        // 1) Curso
-        const { data: courseRow, error: courseError } = await supabase
+        // 1) Curso + 2) Topics en paralelo
+        const courseQuery = supabase
           .from("courses")
           .select("id, name, description")
           .eq("id", courseId)
           .single();
+
+        const topicsQuery = supabase
+          .from("topics")
+          .select("id, title, includes, order_number")
+          .eq("course_id", courseId)
+          .order("order_number", { ascending: true })
+          .order("title", { ascending: true });
+
+        const [{ data: courseRow, error: courseError }, { data: topicRows, error: topicsError }] =
+          await Promise.all([courseQuery, topicsQuery]);
 
         if (courseError || !courseRow?.id) {
           setErrorMsg("Curso no encontrado.");
@@ -77,24 +95,87 @@ export default function CursoDetallePage() {
           return;
         }
 
-        // 2) Topics — ORDEN POR order_number ✅
-        const { data: topicRows, error: topicsError } = await supabase
-          .from("topics")
-          .select("id, title, includes, order_number")
-          .eq("course_id", courseId)
-          .order("order_number", { ascending: true })
-          .order("title", { ascending: true });
-
         if (topicsError) {
           setErrorMsg(`Error cargando temas: ${topicsError.message}`);
           setLoading(false);
           return;
         }
-
         if (cancelled) return;
 
+        const topicList = (topicRows ?? []) as TopicRow[];
+
         setCourse(courseRow as CourseRow);
-        setTopics((topicRows ?? []) as TopicRow[]);
+        setTopics(topicList);
+
+        // Æ’o. Progreso por tema solo con respuestas de repaso.
+        const topicIds = topicList.map((t) => t.id).filter(Boolean);
+        if (topicIds.length === 0) {
+          setProgressByTopic({});
+          setLoading(false);
+          return;
+        }
+
+        const { data: questionRows, error: questionError } = await supabase
+          .from("questions")
+          .select("id, topic_id")
+          .eq("course_id", courseId)
+          .in("topic_id", topicIds);
+
+        if (questionError) console.error(questionError);
+
+        const questionTopicMap = new Map<string, string>();
+        const totalByTopic = new Map<string, number>();
+
+        for (const row of questionRows ?? []) {
+          if (!row?.id || !row?.topic_id) continue;
+          questionTopicMap.set(row.id, row.topic_id);
+          totalByTopic.set(row.topic_id, (totalByTopic.get(row.topic_id) ?? 0) + 1);
+        }
+
+        const { data: answerRows, error: answerError } = await supabase
+          .from("exam_answers")
+          .select("question_id, is_correct, created_at, exam_sessions!inner(mode, user_id, course_id)")
+          .eq("exam_sessions.user_id", user.id)
+          .eq("exam_sessions.mode", "repaso")
+          .eq("exam_sessions.course_id", courseId);
+
+        if (answerError) console.error(answerError);
+
+        const latestByQuestion = new Map<string, { isCorrect: boolean; createdAt: number }>();
+        for (const row of answerRows ?? []) {
+          const questionId = (row as any)?.question_id;
+          if (!questionId || !questionTopicMap.has(questionId)) continue;
+
+          const createdAtRaw = Date.parse((row as any)?.created_at ?? "");
+          const createdAt = Number.isNaN(createdAtRaw) ? 0 : createdAtRaw;
+          const prev = latestByQuestion.get(questionId);
+          if (!prev || createdAt >= prev.createdAt) {
+            latestByQuestion.set(questionId, {
+              isCorrect: !!(row as any)?.is_correct,
+              createdAt,
+            });
+          }
+        }
+
+        const progress: Record<string, TopicProgress> = {};
+        for (const topicId of topicIds) {
+          progress[topicId] = {
+            total: totalByTopic.get(topicId) ?? 0,
+            correct: 0,
+            incorrect: 0,
+            answered: 0,
+          };
+        }
+
+        for (const [questionId, payload] of latestByQuestion.entries()) {
+          const topicId = questionTopicMap.get(questionId);
+          if (!topicId || !progress[topicId]) continue;
+          if (payload.isCorrect) progress[topicId].correct += 1;
+          else progress[topicId].incorrect += 1;
+          progress[topicId].answered += 1;
+        }
+
+        setProgressByTopic(progress);
         setLoading(false);
       } catch (e: any) {
         if (cancelled) return;
@@ -104,7 +185,7 @@ export default function CursoDetallePage() {
     }
 
     if (!courseId) {
-      setErrorMsg("courseId inválido.");
+      setErrorMsg("courseId invÃ¡lido.");
       setLoading(false);
       return;
     }
@@ -214,15 +295,27 @@ export default function CursoDetallePage() {
             <>
               {topics.length === 0 ? (
                 <div className="text-sm text-slate-700 bg-white/70 border border-black/10 rounded-xl p-3">
-                  Este curso aún no tiene temas.
+                  Este curso aÃºn no tiene temas.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {topics.map((t, idx) => {
                     const includesText = normalizeIncludes(t.includes);
 
-                    const correctPct = 0;
-                    const incorrectPct = 0;
+                    const progress = progressByTopic[t.id] ?? {
+                      total: 0,
+                      correct: 0,
+                      incorrect: 0,
+                      answered: 0,
+                    };
+                    const totalCount = progress.total;
+                    const answeredCount = progress.answered;
+                    const correctPct =
+                      totalCount > 0 ? Math.round((progress.correct / totalCount) * 100) : 0;
+                    const incorrectPct =
+                      totalCount > 0 ? Math.round((progress.incorrect / totalCount) * 100) : 0;
+                    const correctRate =
+                      answeredCount > 0 ? Math.round((progress.correct / answeredCount) * 100) : 0;
 
                     const badgeNumber =
                       typeof t.order_number === "number" && t.order_number > 0
@@ -284,18 +377,21 @@ export default function CursoDetallePage() {
                         <div className="mt-3">
                           <div className="h-2.5 w-full rounded-full bg-slate-900/10 overflow-hidden border border-black/5 relative">
                             <div
-                              className="absolute left-0 top-0 h-full bg-emerald-500/70"
+                              className="absolute left-0 top-0 h-full bg-emerald-500/80"
                               style={{ width: `${correctPct}%` }}
                             />
                             <div
-                              className="absolute top-0 h-full bg-rose-500/70"
+                              className="absolute top-0 h-full bg-rose-500/80"
                               style={{ left: `${correctPct}%`, width: `${incorrectPct}%` }}
                             />
                           </div>
 
                           <div className="mt-2 flex items-center justify-between text-xs text-slate-600">
-                            <span>Respondidas: 0</span>
-                            <span>0% correcto</span>
+                            <span>
+                              Respondidas: <span className="font-semibold">{answeredCount}</span> /{" "}
+                              {totalCount}
+                            </span>
+                            <span>{correctRate}% correcto</span>
                           </div>
                         </div>
                       </div>
@@ -310,3 +406,5 @@ export default function CursoDetallePage() {
     </main>
   );
 }
+
+
