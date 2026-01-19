@@ -8,6 +8,11 @@ export type ExamOption = {
   is_correct: boolean;
 };
 
+export type MatchingData = {
+  left: string[];
+  right: string[];
+};
+
 export type ExamQuestion = {
   id: string;
   topic_id?: string | null;
@@ -18,6 +23,8 @@ export type ExamQuestion = {
   hint?: string | null;
   position?: number;
   options: ExamOption[];
+  question_type?: string | null;
+  matching_data?: MatchingData | null;
 };
 
 export type ExamSession = {

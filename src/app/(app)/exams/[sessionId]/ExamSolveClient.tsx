@@ -164,6 +164,11 @@ export default function ExamSolveClient({ payload }: Props) {
     const map = new Map<string, ExamOption[]>();
 
     for (const q of orderedQuestions) {
+      const isMatching = (q.question_type ?? "").toString().toLowerCase() === "matching";
+      if (isMatching) {
+        map.set(q.id, []);
+        continue;
+      }
       const seedLocal = `${session.id}-${q.id}`;
       const safe = pickFive(q.options ?? [], seedLocal);
       map.set(q.id, safe);
@@ -474,6 +479,16 @@ export default function ExamSolveClient({ payload }: Props) {
     }
   };
 
+  const handleResetMarks = () => {
+    if (!currentQuestionId) return;
+    setStrikeState((prev) => {
+      const next = { ...prev };
+      if (!next[currentQuestionId] || next[currentQuestionId].size === 0) return prev;
+      next[currentQuestionId] = new Set();
+      return next;
+    });
+  };
+
   useEffect(() => {
     const questionId = currentQuestionId;
     if (!questionId || finished || isPending) return;
@@ -726,6 +741,7 @@ export default function ExamSolveClient({ payload }: Props) {
                 finished={finished}
                 onSelect={handleSelectOption}
                 onToggleStrike={handleToggleStrike}
+                onResetMarks={handleResetMarks}
                 note={currentNote}
                 onSaveNote={handleSaveNote}
                 savingNote={savingNoteId === currentQuestion.id}

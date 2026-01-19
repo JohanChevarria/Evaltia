@@ -25,8 +25,7 @@ export function OptionItem({
   onSelect,
   onToggleStrike,
 }: OptionItemProps) {
-  const base =
-    "w-full rounded-xl border px-3 py-3 text-left transition";
+  const base = "w-full rounded-xl border px-3 py-3 text-left transition";
 
   // ✅ paleta sobria
   const stateClass = showCorrect
@@ -65,12 +64,12 @@ export function OptionItem({
         <div className={`flex items-start justify-between gap-4 ${strikeClass}`}>
           <div className="flex gap-3 min-w-0">
             <div
-              className={`h-8 w-8 rounded-lg border grid place-items-center text-sm font-semibold shadow-inner ${badgeClass}`}
+              className={`h-8 w-8 rounded-lg border grid place-items-center text-sm font-semibold shadow-inner ev-question-font ${badgeClass}`}
             >
               {option.label ?? "?"}
             </div>
 
-            <div className="min-w-0 text-sm text-slate-900 whitespace-pre-wrap break-words">
+            <div className="min-w-0 text-[15px] leading-6 text-slate-900 whitespace-pre-wrap break-words ev-question-font">
               {option.text || "Sin texto"}
             </div>
           </div>
@@ -78,7 +77,7 @@ export function OptionItem({
 
         {/* ✅ explicación */}
         {showExplanation && (
-          <div className="mt-2 text-xs text-slate-600 text-left whitespace-pre-wrap break-words">
+          <div className="mt-2 text-[12px] leading-5 text-slate-600 text-left whitespace-pre-wrap break-words ev-question-font">
             {option.explanation || "Sin explicación"}
           </div>
         )}

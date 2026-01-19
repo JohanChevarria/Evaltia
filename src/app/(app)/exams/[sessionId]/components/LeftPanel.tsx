@@ -36,6 +36,8 @@ export function LeftPanel({
   currentIndex,
   onSelect,
 }: Props) {
+  const shouldScroll = items.length > 10;
+
   return (
     <div className="rounded-2xl bg-white/80 backdrop-blur border border-black/5 shadow-lg p-4 space-y-4 w-full min-w-[240px]">
       <div className="min-w-0">
@@ -57,7 +59,11 @@ export function LeftPanel({
       <div>
         <p className="text-xs text-slate-500 mb-2">Preguntas</p>
 
-        <div className="space-y-2">
+        <div
+          className={`space-y-2 ${
+            shouldScroll ? "max-h-[552px] overflow-y-auto pr-2 scrollbar-soft" : ""
+          }`}
+        >
           {items.map((item, idx) => {
             const isActive = idx === currentIndex;
 

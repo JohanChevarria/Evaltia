@@ -1,13 +1,7 @@
 const DEFAULT_UNI_CODE = "usmp";
 
 type SupabaseQueryClient = {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        single: () => Promise<{ data: { code?: string | null } | null }>;
-      };
-    };
-  };
+  from: (...args: any[]) => any;
 };
 
 export async function getStudioPathForUniversityId(

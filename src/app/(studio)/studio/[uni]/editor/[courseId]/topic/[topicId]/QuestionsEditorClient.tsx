@@ -21,7 +21,7 @@ type Props = {
   topicId: string;
   topicTitle: string;
 
-  concepts: { id: string; title: string; order_number?: number }[];
+  concepts: { id: string; title: string; order_number?: number | null }[];
   questions: QuestionRow[];
   options: OptionRow[];
 };

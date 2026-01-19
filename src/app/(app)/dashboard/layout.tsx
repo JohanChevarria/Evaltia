@@ -25,11 +25,11 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
-  // ✅ Login real
   if (!profile) redirect("/login");
 
   const role = profile.role ?? "student";
 
+  // ✅ Admin → studio
   if (role === "admin") {
     if (!profile.university_id) {
       redirect("/dashboard/main");
@@ -43,8 +43,10 @@ export default async function DashboardLayout({
     redirect(studioPath);
   }
 
+  // ✅ Onboarding → OJO: (onboarding) NO aparece en URL
+  // Tu ruta real es /university
   if (!profile.university_onboarding_completed) {
-    redirect("/onboarding/university");
+    redirect("/university");
   }
 
   return <>{children}</>;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, Loader2, NotebookPen, Plus } from "lucide-react";
-import type { ExamMode, ExamOption, ExamQuestion } from "../../lib/types";
+import { Eye, Loader2, NotebookPen, Plus, RotateCcw } from "lucide-react";
+import type { ExamMode, ExamOption, ExamQuestion, MatchingData } from "../../lib/types";
 import { OptionItem } from "./OptionItem";
 
 type Props = {
@@ -23,9 +23,12 @@ type Props = {
   savingNote: boolean;
   reviewIncorrectLabels?: Set<string>;
   reviewCorrectLabel?: string | null;
+  onResetMarks?: () => void;
 };
 
 const UI_LABELS = ["A", "B", "C", "D", "E"] as const;
+const MATCHING_LEFT_LABELS = ["A", "B", "C", "D"] as const;
+const MATCHING_RIGHT_LABELS = ["I", "II", "III", "IV"] as const;
 const EMPTY_REVIEW_SET = new Set<string>();
 
 /**
@@ -123,6 +126,29 @@ function toggleHighlightSelection(container: HTMLElement) {
   }
 }
 
+function normalizeMatchingSide(values: unknown) {
+  const base = Array.isArray(values) ? values : [];
+  return base.map((v) => String(v ?? "").trim());
+}
+
+function normalizeMatchingData(raw: unknown): MatchingData {
+  const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  return {
+    left: normalizeMatchingSide(obj.left),
+    right: normalizeMatchingSide(obj.right),
+  };
+}
+
+function clearHighlights(container: HTMLElement) {
+  const spans = container.querySelectorAll("span[data-ev-highlight='1']");
+  spans.forEach((span) => {
+    const parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+  });
+}
+
 export function QuestionArea({
   question,
   options,
@@ -141,6 +167,7 @@ export function QuestionArea({
   savingNote,
   reviewIncorrectLabels,
   reviewCorrectLabel,
+  onResetMarks,
 }: Props) {
   const [showHint, setShowHint] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
@@ -174,6 +201,12 @@ export function QuestionArea({
   const isReview = mode === "repaso";
   const reviewIncorrect = isReview ? (reviewIncorrectLabels ?? EMPTY_REVIEW_SET) : EMPTY_REVIEW_SET;
   const reviewCorrect = isReview ? (reviewCorrectLabel ?? null) : null;
+
+  const isMatching = (question.question_type ?? "").toString().toLowerCase() === "matching";
+  const matching = useMemo(
+    () => normalizeMatchingData(question.matching_data),
+    [question.matching_data]
+  );
 
   // ✅ 1) Fuerza letras A–E por ORDEN VISUAL (index)
   const uiOptions = useMemo(() => {
@@ -220,7 +253,9 @@ export function QuestionArea({
     <div className="space-y-4">
       {/* PREGUNTA */}
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5">
-        <p className="text-xs uppercase tracking-wide text-slate-500 font-semibold">Pregunta</p>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold ev-question-font">
+          Pregunta
+        </p>
 
         <div
           ref={questionRef}
@@ -229,7 +264,7 @@ export function QuestionArea({
             if (!el) return;
             toggleHighlightSelection(el);
           }}
-          className="mt-2 text-lg font-semibold text-slate-900 whitespace-pre-wrap break-words select-text"
+          className="mt-3 text-[15px] sm:text-[16px] leading-7 font-medium text-slate-900 whitespace-pre-wrap break-words select-text ev-question-font"
         >
           {question.text}
         </div>
@@ -242,12 +277,12 @@ export function QuestionArea({
         )}
 
         {/* BOTONES */}
-        <div className="mt-4 flex flex-wrap items-center gap-5">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => setShowHint((v) => !v)}
             disabled={!hasHint}
-            className={`inline-flex items-center gap-2 text-sm font-semibold text-slate-600 ${
+            className={`inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font ${
               !hasHint ? "opacity-50 cursor-not-allowed" : "hover:underline"
             }`}
           >
@@ -258,15 +293,29 @@ export function QuestionArea({
           <button
             type="button"
             onClick={() => setNotesOpen((v) => !v)}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:underline"
+            className="inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font hover:underline"
           >
             <Plus className="h-4 w-4" />
             Agregar notas
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              const el = questionRef.current;
+              if (el) clearHighlights(el);
+              onResetMarks?.();
+            }}
+            className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:border-slate-300 hover:text-slate-900"
+            title="Reiniciar marcas"
+            aria-label="Reiniciar marcas"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
         </div>
 
         {showHint && hasHint && (
-          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">
+          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[13px] leading-6 text-slate-800 ev-question-font">
             {question.hint}
           </div>
         )}
@@ -274,7 +323,7 @@ export function QuestionArea({
         {/* NOTAS */}
         {notesOpen && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-800 ev-question-font">
               <NotebookPen className="h-4 w-4" />
               Nota personal
             </div>
@@ -283,7 +332,7 @@ export function QuestionArea({
               rows={3}
               value={noteValue}
               onChange={(e) => setNoteValue(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-[13px] text-slate-800 ev-question-font"
               placeholder="Escribe una nota para esta pregunta"
             />
 
@@ -312,32 +361,88 @@ export function QuestionArea({
         )}
       </div>
 
-      {/* OPCIONES */}
-      <div className="space-y-2">
-        {optionStates.map(({ opt, uiLabel, isSelected, showCorrect, showIncorrect, showThisExplanation }, idx) => (
-          <OptionItem
-            key={opt.id ?? `${question.id}-${idx}`}
-            // ✅ clonamos la opción, pero forzamos label UI (A–E) SOLO para mostrar
-            option={{ ...opt, label: uiLabel }}
-            isSelected={isSelected}
-            isDisabled={locked || finished}
-            showCorrect={showCorrect}
-            showIncorrect={showIncorrect}
-            showExplanation={showThisExplanation}
-            // ✅ strike ahora se guarda por letra UI (A–E)
-            striked={striked.has(uiLabel)}
-            // ✅ al seleccionar, mandamos A–E
-            onSelect={() => onSelect(uiLabel)}
-            onToggleStrike={() => onToggleStrike(uiLabel)}
-          />
-        ))}
-
-        {mode !== "simulacro" && showFeedback && (
-          <p className={`text-sm font-semibold ${isAnswerCorrect ? "text-emerald-700" : "text-amber-700"}`}>
-            {isAnswerCorrect ? "Respuesta correcta" : "Respuesta incorrecta"}
+      {isMatching && (
+        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold ev-question-font">
+            Relacionar conceptos
           </p>
-        )}
-      </div>
+
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
+                Conceptos
+              </div>
+              {MATCHING_LEFT_LABELS.map((label, idx) => {
+                const value = matching.left[idx] ?? "";
+                return (
+                  <div key={label} className="flex items-start gap-2">
+                    <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
+                      {label}
+                    </span>
+                    <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
+                      {value ? value : <span className="text-slate-400">[vacio]</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
+                Definiciones
+              </div>
+              {MATCHING_RIGHT_LABELS.map((label, idx) => {
+                const value = matching.right[idx] ?? "";
+                return (
+                  <div key={label} className="flex items-start gap-2">
+                    <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
+                      {label}
+                    </span>
+                    <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
+                      {value ? value : <span className="text-slate-400">[vacio]</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OPCIONES */}
+      {!isMatching && (
+        <div className="space-y-2">
+          {optionStates.map(
+            ({ opt, uiLabel, isSelected, showCorrect, showIncorrect, showThisExplanation }, idx) => (
+              <OptionItem
+                key={opt.id ?? `${question.id}-${idx}`}
+                // ✅ clonamos la opción, pero forzamos label UI (A–E) SOLO para mostrar
+                option={{ ...opt, label: uiLabel }}
+                isSelected={isSelected}
+                isDisabled={locked || finished}
+                showCorrect={showCorrect}
+                showIncorrect={showIncorrect}
+                showExplanation={showThisExplanation}
+                // ✅ strike ahora se guarda por letra UI (A–E)
+                striked={striked.has(uiLabel)}
+                // ✅ al seleccionar, mandamos A–E
+                onSelect={() => onSelect(uiLabel)}
+                onToggleStrike={() => onToggleStrike(uiLabel)}
+              />
+            )
+          )}
+
+          {mode !== "simulacro" && showFeedback && (
+            <p
+              className={`text-sm font-semibold ${
+                isAnswerCorrect ? "text-emerald-700" : "text-amber-700"
+              }`}
+            >
+              {isAnswerCorrect ? "Respuesta correcta" : "Respuesta incorrecta"}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

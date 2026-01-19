@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,6 +13,13 @@ body {
 
 body {
   margin: 0;
+  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Solo para módulos que necesitan el font de preguntas */
+.ev-question-font {
+  font-family: "Manrope", "Mulish", system-ui, sans-serif;
 }
 
 /* Soft hover scrollbar for internal panels. */
@@ -37,4 +47,61 @@ body {
 
 .scrollbar-soft:hover::-webkit-scrollbar-thumb {
   background-color: rgba(100, 116, 139, 0.45);
+}
+
+/* ===== Evaltia Settings (Lovable-like) ===== */
+
+/* Fondo gradiente para la página de configuración */
+.evaltia-gradient-bg {
+  background: linear-gradient(135deg, #2c3e50 0%, #3a506b 35%, #435e79 100%);
+  min-height: 100vh;
+}
+
+/* ✅ Font + nitidez SOLO para Configuración (Lovable usa Inter) */
+.settings-font {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.01em;
+}
+
+.settings-font h1,
+.settings-font h2,
+.settings-font h3 {
+  letter-spacing: -0.02em;
+}
+
+.settings-font p,
+.settings-font span,
+.settings-font label,
+.settings-font input,
+.settings-font button,
+.settings-font select {
+  letter-spacing: -0.005em;
+}
+
+/* Inputs/labels estilo Lovable */
+.settings-label {
+  @apply text-xs font-medium text-slate-600;
+}
+
+.settings-input {
+  @apply mt-2 w-full rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-900 outline-none ring-1 ring-slate-200 transition;
+  @apply focus:ring-2 focus:ring-emerald-300;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.settings-input:disabled {
+  @apply text-slate-600 bg-slate-100/80;
+}
+
+.badge-demo {
+  @apply rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700;
+}
+
+.coming-soon-badge {
+  @apply inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-700;
 }

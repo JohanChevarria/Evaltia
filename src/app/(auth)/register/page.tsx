@@ -1,6 +1,7 @@
+// src/app/(auth)/register/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -8,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [firstName, setFirstName] = useState("");
   const [lastNameP, setLastNameP] = useState("");
@@ -25,15 +26,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (
-      !firstName ||
-      !lastNameP ||
-      !lastNameM ||
-      !username ||
-      !email ||
-      !password ||
-      !confirmPassword
-    ) {
+    if (!firstName || !lastNameP || !lastNameM || !username || !email || !password || !confirmPassword) {
       setErrorMsg("Completa todos los campos.");
       return;
     }
@@ -45,9 +38,7 @@ export default function RegisterPage() {
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
-      setErrorMsg(
-        "La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula y número."
-      );
+      setErrorMsg("La contraseña debe tener mínimo 8 caracteres, con mayúscula, minúscula y número.");
       return;
     }
 
@@ -59,10 +50,9 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-
-      // 👇 después de confirmar email, a donde quieres que aterrice el usuario
-      const redirectTo = `${window.location.origin}/dashboard/main`;
+      // ✅ RUTA CORRECTA: (onboarding) NO aparece en URL
+      // Tu página vive en /university (NO /onboarding/university)
+      const redirectTo = `${window.location.origin}/university`;
 
       const { error } = await supabase.auth.signUp({
         email,
@@ -95,7 +85,6 @@ export default function RegisterPage() {
   }
 
   return (
-    // ✅ ÚNICO CAMBIO: agregar py-16 para aire arriba/abajo (evita que quede pegado al margen final)
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-16 text-white">
       <div
         className="absolute inset-0 z-0"
@@ -120,18 +109,10 @@ export default function RegisterPage() {
         <Link href="/" className="inline-block">
           <div className="flex items-center gap-3 cursor-pointer select-none">
             <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
-              <Image
-                src="/evaltia-logo.png"
-                alt="Evaltia"
-                width={24}
-                height={24}
-                priority
-              />
+              <Image src="/evaltia-logo.png" alt="Evaltia" width={24} height={24} priority />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900">
-                Evaltia
-              </span>
+              <span className="text-sm font-semibold text-slate-900">Evaltia</span>
               <span className="text-[11px] text-slate-500">
                 Tu camino más fácil para estudiar medicina.
               </span>
@@ -167,9 +148,7 @@ export default function RegisterPage() {
 
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs font-medium text-slate-700">
-                Apellido paterno
-              </label>
+              <label className="text-xs font-medium text-slate-700">Apellido paterno</label>
               <input
                 value={lastNameP}
                 onChange={(e) => setLastNameP(e.target.value)}
@@ -178,9 +157,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex-1">
-              <label className="text-xs font-medium text-slate-700">
-                Apellido materno
-              </label>
+              <label className="text-xs font-medium text-slate-700">Apellido materno</label>
               <input
                 value={lastNameM}
                 onChange={(e) => setLastNameM(e.target.value)}
@@ -190,9 +167,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700">
-              Nombre de usuario
-            </label>
+            <label className="text-xs font-medium text-slate-700">Nombre de usuario</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -201,9 +176,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700">
-              Correo electrónico
-            </label>
+            <label className="text-xs font-medium text-slate-700">Correo electrónico</label>
             <input
               type="email"
               value={email}
@@ -213,9 +186,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700">
-              Contraseña
-            </label>
+            <label className="text-xs font-medium text-slate-700">Contraseña</label>
             <input
               type="password"
               value={password}
@@ -228,9 +199,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="text-xs font-medium text-slate-700">
-              Repite la contraseña
-            </label>
+            <label className="text-xs font-medium text-slate-700">Repite la contraseña</label>
             <input
               type="password"
               value={confirmPassword}

@@ -118,50 +118,86 @@ export default function Home() {
         <HeroEvaltia />
       </div>
 
-      {/* FOOTER (igual que tu base, solo alineado) */}
-      <footer className="relative z-10 bg-white/10 backdrop-blur-md text-gray-200 pt-16 pb-10 px-6 border-t border-white/15">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-10 text-sm">
-          <div>
-            <h4 className="text-white font-semibold mb-3">Evaltia</h4>
-            <p className="text-white/80 text-xs leading-relaxed">
-              Plataforma de estudio médico adaptada a tu ritmo. Simulacros, progreso y repaso inteligente.
-            </p>
-          </div>
+      {/* FOOTER (mejor tipografía/jerarquía + grid correcto) */}
+      {/* FOOTER PREMIUM */}
+<footer className="relative z-10 bg-[#1e2f42]/85 backdrop-blur-md text-gray-200 pt-20 pb-10 px-6 border-t border-white/10">
+  <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 text-sm">
 
-          <div>
-            <h4 className="text-white font-semibold mb-3">Compañía</h4>
-            <ul className="space-y-1 text-white/85">
-              <li><a href="#" className="hover:text-white transition">Nosotros</a></li>
-              <li><a href="#" className="hover:text-white transition">Blog</a></li>
-              <li><a href="#" className="hover:text-white transition">Cursos</a></li>
-            </ul>
-          </div>
+    {/* Marca */}
+    <div>
+      <h4 className="text-white text-lg font-semibold mb-3">Evaltia</h4>
+      <p className="text-white/80 text-sm leading-relaxed">
+        Plataforma de estudio médico adaptada a tu ritmo.  
+        Simulacros, progreso inteligente y repaso real.
+      </p>
+    </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-3">Legal</h4>
-            <ul className="space-y-1 text-white/85">
-              <li><a href="#" className="hover:text-white transition">Términos y condiciones</a></li>
-              <li><a href="#" className="hover:text-white transition">Política de privacidad</a></li>
-            </ul>
-          </div>
+    {/* Compañía */}
+    <div>
+      <h4 className="text-white font-semibold mb-3">Compañía</h4>
+      <ul className="space-y-2 text-white/80">
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Nosotros
+          </a>
+        </li>
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Blog
+          </a>
+        </li>
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Cursos
+          </a>
+        </li>
+      </ul>
+    </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-3">Soporte</h4>
-            <ul className="space-y-1 text-white/85">
-              <li><a href="#" className="hover:text-white transition">Centro de ayuda</a></li>
-              <li>
-                <a href="mailto:soporte@evaltia.com" className="hover:text-white transition">
-                  soporte@evaltia.com
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+    {/* Legal */}
+    <div>
+      <h4 className="text-white font-semibold mb-3">Legal</h4>
+      <ul className="space-y-2 text-white/80">
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Términos y condiciones
+          </a>
+        </li>
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Política de privacidad
+          </a>
+        </li>
+      </ul>
+    </div>
 
-        <div className="border-t border-white/15 mt-10 pt-6 text-center text-xs text-white/70">
-          © {new Date().getFullYear()} Evaltia. Todos los derechos reservados.
-        </div>
-      </footer>
+    {/* Soporte */}
+    <div>
+      <h4 className="text-white font-semibold mb-3">Soporte</h4>
+      <ul className="space-y-2 text-white/80">
+        <li>
+          <a href="#" className="hover:text-white transition">
+            Centro de ayuda
+          </a>
+        </li>
+        <li>
+          <a
+            href="mailto:soporte@evaltia.com"
+            className="hover:text-white transition"
+          >
+            soporte@evaltia.com
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  {/* Divider */}
+  <div className="border-t border-white/10 mt-14 pt-6 text-center text-xs text-white/60">
+    © {new Date().getFullYear()} Evaltia. Todos los derechos reservados.
+  </div>
+</footer>
+
     </main>
   );
 }

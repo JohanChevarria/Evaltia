@@ -108,7 +108,7 @@ export default function DashboardUniMainPage() {
       return;
     }
 
-    if (!prof.university_onboarding_completed) {
+    if (!prof.university_onboarding_completed || !prof.university_id) {
       router.replace("/onboarding/university");
       return;
     }
