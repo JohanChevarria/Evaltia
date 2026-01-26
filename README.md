@@ -1,4 +1,4 @@
-# Evaltia
+# Exemy
 
 Plataforma de estudio para estudiantes de medicina (Q-bank, repaso y simulacros), con soporte por universidad y panel de administración/editor.
 

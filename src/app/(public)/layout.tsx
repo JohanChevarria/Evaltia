@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Evaltia",
+  title: "Exemy",
   description: "Tu camino más fácil para estudiar medicina.",
 };
 

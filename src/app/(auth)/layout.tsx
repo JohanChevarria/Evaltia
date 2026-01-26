@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Evaltia",
+  title: "Exemy",
   description: "Tu camino más fácil para estudiar medicina.",
 };
 

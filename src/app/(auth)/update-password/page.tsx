@@ -68,7 +68,7 @@ export default function UpdatePasswordPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-16 text-white">
-      {/* Fondo Evaltia */}
+      {/* Fondo Exemy */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -94,7 +94,7 @@ export default function UpdatePasswordPage() {
           <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center shadow">
             <Image
               src="/evaltia-logo.png"
-              alt="Evaltia"
+              alt="Exemy"
               width={26}
               height={26}
               priority

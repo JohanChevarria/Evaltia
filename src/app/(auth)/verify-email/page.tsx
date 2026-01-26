@@ -46,7 +46,7 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
           <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
             <Image
               src="/evaltia-logo.png"
-              alt="Evaltia"
+              alt="Exemy"
               width={26}
               height={26}
               priority

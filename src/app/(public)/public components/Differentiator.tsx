@@ -36,18 +36,18 @@ export default function Differentiator() {
           "
         >
           <h2 className="text-2xl md:text-3xl font-bold text-white">
-            ¿Por qué Evaltia es diferente?
+            ¿Por qué Exemy es diferente?
           </h2>
 
           <p className="mt-5 text-sm md:text-base text-white/90 leading-relaxed">
-            Muchas plataformas ofrecen bancos de preguntas genéricos. Evaltia se
+            Muchas plataformas ofrecen bancos de preguntas genéricos. Exemy se
             construye alrededor del plan académico real de tu universidad, con
             contenido que se actualiza según los cambios curriculares.
           </p>
 
           <p className="mt-4 text-sm md:text-base text-white/85 leading-relaxed">
             No se trata de responder más preguntas, sino de estudiar mejor.
-            Evaltia te muestra exactamente dónde estás y qué necesitas reforzar,
+            Exemy te muestra exactamente dónde estás y qué necesitas reforzar,
             para que uses tu tiempo de forma inteligente.
           </p>
         </motion.div>
@@ -68,7 +68,7 @@ export default function Differentiator() {
         >
           <div className="grid grid-cols-3 gap-4 mb-5 pb-4 border-b border-white/20">
             <div className="text-xs font-medium text-white/70">Característica</div>
-            <div className="text-xs font-medium text-white text-center">Evaltia</div>
+            <div className="text-xs font-medium text-white text-center">Exemy</div>
             <div className="text-xs font-medium text-white/60 text-center">
               Otras plataformas
             </div>

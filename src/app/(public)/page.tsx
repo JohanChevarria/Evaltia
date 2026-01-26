@@ -82,7 +82,7 @@ export default function Home() {
                   className="rounded-lg"
                 />
                 <span className="text-white text-lg font-semibold tracking-tight">
-                  Evaltia
+                  Exemy
                 </span>
               </Link>
 
@@ -125,7 +125,7 @@ export default function Home() {
 
     {/* Marca */}
     <div>
-      <h4 className="text-white text-lg font-semibold mb-3">Evaltia</h4>
+      <h4 className="text-white text-lg font-semibold mb-3">Exemy</h4>
       <p className="text-white/80 text-sm leading-relaxed">
         Plataforma de estudio médico adaptada a tu ritmo.  
         Simulacros, progreso inteligente y repaso real.
@@ -182,10 +182,10 @@ export default function Home() {
         </li>
         <li>
           <a
-            href="mailto:soporte@evaltia.com"
+            href="mailto:soporte@exemy.com"
             className="hover:text-white transition"
           >
-            soporte@evaltia.com
+            soporte@exemy.com
           </a>
         </li>
       </ul>
@@ -194,7 +194,7 @@ export default function Home() {
 
   {/* Divider */}
   <div className="border-t border-white/10 mt-14 pt-6 text-center text-xs text-white/60">
-    © {new Date().getFullYear()} Evaltia. Todos los derechos reservados.
+    © {new Date().getFullYear()} Exemy. Todos los derechos reservados.
   </div>
 </footer>
 

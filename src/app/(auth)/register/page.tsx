@@ -109,10 +109,10 @@ export default function RegisterPage() {
         <Link href="/" className="inline-block">
           <div className="flex items-center gap-3 cursor-pointer select-none">
             <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
-              <Image src="/evaltia-logo.png" alt="Evaltia" width={24} height={24} priority />
+              <Image src="/evaltia-logo.png" alt="Exemy" width={24} height={24} priority />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-slate-900">Evaltia</span>
+              <span className="text-sm font-semibold text-slate-900">Exemy</span>
               <span className="text-[11px] text-slate-500">
                 Tu camino más fácil para estudiar medicina.
               </span>

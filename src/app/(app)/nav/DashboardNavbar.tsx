@@ -74,9 +74,9 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
     <div className="relative z-50 grid grid-cols-[auto,minmax(0,1fr),auto] items-center gap-4">
       {/* Logo */}
       <div className="flex items-center gap-3 shrink-0">
-        <Image src="/evaltia-logo.png" alt="Evaltia" width={36} height={36} />
+        <Image src="/evaltia-logo.png" alt="Exemy" width={36} height={36} />
         <span className="font-semibold text-lg leading-none hidden sm:inline">
-          Evaltia
+          Exemy
         </span>
       </div>
 

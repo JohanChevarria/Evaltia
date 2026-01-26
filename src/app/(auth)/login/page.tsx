@@ -123,14 +123,14 @@ export default function LoginPage() {
             <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
               <Image
                 src="/evaltia-logo.png"
-                alt="Evaltia"
+                alt="Exemy"
                 width={24}
                 height={24}
                 priority
               />
             </div>
             <span className="font-semibold text-lg text-slate-800">
-              Evaltia
+              Exemy
             </span>
           </Link>
 

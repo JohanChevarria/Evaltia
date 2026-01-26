@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Brain, LineChart, Clock } from "lucide-react";
 import type { ReactNode } from "react";
 
-// Landing principal de Evaltia (hero + secciones) con foto + colores del hub
+// Landing principal de Exemy (hero + secciones) con foto + colores del hub
 export function HeroEvaltia() {
   return (
     <main className="relative min-h-screen text-white overflow-hidden">
@@ -11,7 +11,7 @@ export function HeroEvaltia() {
       <div className="absolute inset-0 -z-20">
         <Image
           src="/laptop-nuevo.png"
-          alt="Estudiante de medicina usando Evaltia"
+          alt="Estudiante de medicina usando Exemy"
           fill
           priority
           sizes="100vw"
@@ -79,14 +79,14 @@ export function HeroEvaltia() {
           </p>
         </div>
 
-        {/* SECCIÃ“N: QuÃ© ofrece Evaltia */}
+        {/* SECCIÃ“N: QuÃ© ofrece Exemy */}
         <section id="features" className="space-y-8">
           <div className="max-w-3xl space-y-3">
             <h2 className="text-2xl md:text-3xl font-semibold text-white">
               Elige cuÃ¡ndo y cuÃ¡nto estudiar.
             </h2>
             <p className="text-sm sm:text-base text-slate-100/90">
-              Evaltia te da el control: arma simulacros por curso y tema, revisa
+              Exemy te da el control: arma simulacros por curso y tema, revisa
               tu progreso y decide si haces una prÃ¡ctica rÃ¡pida de 10 preguntas
               o un simulacro largo antes del examen.
             </p>
@@ -106,7 +106,7 @@ export function HeroEvaltia() {
             <FeatureCard
               icon={<Clock className="h-5 w-5" />}
               title="Se adapta a tu tiempo"
-              text="Bloques cortos entre clases o sesiones largas: tÃº eliges el ritmo, Evaltia se encarga del resto."
+              text="Bloques cortos entre clases o sesiones largas: tÃº eliges el ritmo, Exemy se encarga del resto."
             />
           </div>
         </section>
@@ -119,7 +119,7 @@ export function HeroEvaltia() {
             </h2>
             <p className="text-sm sm:text-base text-slate-100/90">
               Empezamos con la malla de HistologÃ­a y BioquÃ­mica de la USMP y
-              luego sumaremos mÃ¡s universidades. La idea es que Evaltia hable el
+              luego sumaremos mÃ¡s universidades. La idea es que Exemy hable el
               mismo idioma que tu sÃ­labo y tu cronograma real.
             </p>
             <ul className="space-y-2 text-sm text-slate-100/90">
@@ -137,7 +137,7 @@ export function HeroEvaltia() {
             <ul className="space-y-2 text-sm text-slate-100">
               <li>â€¢ Navegar por tu hub como si fueras un estudiante real.</li>
               <li>â€¢ Ver cÃ³mo se organizan cursos, temas y prÃ¡cticas.</li>
-              <li>â€¢ Probar la sensaciÃ³n de resolver preguntas dentro de Evaltia.</li>
+              <li>â€¢ Probar la sensaciÃ³n de resolver preguntas dentro de Exemy.</li>
             </ul>
             <Link
               href="/register"

@@ -672,7 +672,7 @@ export default function ExamSolveClient({ payload }: Props) {
   };
 
   const handleFeedback = () => {
-    setActionError("Envia tu comentario a soporte@evaltia.com mientras activamos el canal de feedback.");
+    setActionError("Envia tu comentario a soporte@exemy.com mientras activamos el canal de feedback.");
   };
 
   const navigateTo = (index: number) => {

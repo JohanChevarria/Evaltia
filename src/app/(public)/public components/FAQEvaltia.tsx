@@ -15,11 +15,11 @@ export default function FAQEvaltia() {
   const items: FAQItem[] = useMemo(
     () => [
       {
-        q: "¿Qué ofrece Evaltia?",
+        q: "¿Qué ofrece Exemy?",
         a: (
           <div className="space-y-3">
             <p>
-              Evaltia ofrece bancos de preguntas personalizados según la malla
+              Exemy ofrece bancos de preguntas personalizados según la malla
               curricular de cada universidad.
             </p>
             <p>
@@ -31,10 +31,10 @@ export default function FAQEvaltia() {
         ),
       },
       {
-        q: "¿Los bancos de preguntas de Evaltia son gratuitos?",
+        q: "¿Los bancos de preguntas de Exemy son gratuitos?",
         a: (
           <div className="space-y-3">
-            <p>Actualmente, Evaltia se encuentra en fase DEMO.</p>
+            <p>Actualmente, Exemy se encuentra en fase DEMO.</p>
             <p>
               Esta etapa nos permite analizar cómo los estudiantes interactúan
               con la plataforma y recopilar sugerencias para optimizar la
@@ -49,7 +49,7 @@ export default function FAQEvaltia() {
         ),
       },
       {
-        q: "¿Qué beneficios obtengo al usar Evaltia?",
+        q: "¿Qué beneficios obtengo al usar Exemy?",
         a: (
           <div className="space-y-3">
             <p>
@@ -60,7 +60,7 @@ export default function FAQEvaltia() {
 
             <div className="pt-2">
               <p className="font-semibold text-white">
-                Team Evaltia (Summer Internship)
+                Team Exemy (Summer Internship)
               </p>
               <p className="mt-2">
                 Es un internship remunerado de verano dirigido a estudiantes
@@ -78,17 +78,17 @@ export default function FAQEvaltia() {
         ),
       },
       {
-        q: "¿Qué son los Embajadores de Evaltia y cómo puedo ser uno?",
+        q: "¿Qué son los Embajadores de Exemy y cómo puedo ser uno?",
         a: (
           <div className="space-y-3">
             <p>
-              Los Embajadores de Evaltia son estudiantes representantes de cada
+              Los Embajadores de Exemy son estudiantes representantes de cada
               universidad.
             </p>
             <p>
               Revisan los bancos de preguntas, analizan comentarios de los
               estudiantes, se mantienen al tanto de cambios curriculares y
-              comunican mejoras al equipo Evaltia.
+              comunican mejoras al equipo Exemy.
             </p>
             <p>
               Duración del cargo: 1 año. Si deseas postular, próximamente
@@ -98,11 +98,11 @@ export default function FAQEvaltia() {
         ),
       },
       {
-        q: "¿Evaltia funciona en todos los países?",
+        q: "¿Exemy funciona en todos los países?",
         a: (
           <div className="space-y-3">
             <p>
-              Actualmente, Evaltia está adaptada a universidades del Perú y
+              Actualmente, Exemy está adaptada a universidades del Perú y
               cuenta con un plan general compatible con la mayoría de
               universidades de Latinoamérica, apoyado con inteligencia
               artificial.
@@ -115,9 +115,9 @@ export default function FAQEvaltia() {
               nosotros, escríbenos a{" "}
               <a
                 className="underline decoration-white/30 hover:decoration-white transition"
-                href="mailto:soporte@evaltia.com"
+                href="mailto:soporte@exemy.com"
               >
-                soporte@evaltia.com
+                soporte@exemy.com
               </a>
               .
             </p>
@@ -125,11 +125,11 @@ export default function FAQEvaltia() {
         ),
       },
       {
-        q: "¿Evaltia ofrecerá preparación para exámenes como ENAM o ENARM?",
+        q: "¿Exemy ofrecerá preparación para exámenes como ENAM o ENARM?",
         a: (
           <div className="space-y-3">
             <p>
-              Sí. Al finalizar la fase DEMO, Evaltia incorporará bancos de
+              Sí. Al finalizar la fase DEMO, Exemy incorporará bancos de
               preguntas especializados y clases enfocadas en distintos exámenes
               médicos.
             </p>
@@ -237,9 +237,9 @@ export default function FAQEvaltia() {
             ¿Tienes más consultas? Escríbenos a{" "}
             <a
               className="text-white underline decoration-white/25 hover:decoration-white transition"
-              href="mailto:soporte@evaltia.com"
+              href="mailto:soporte@exemy.com"
             >
-              soporte@evaltia.com
+              soporte@exemy.com
             </a>
             .
           </div>

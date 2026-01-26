@@ -54,7 +54,7 @@ function DashboardFrame() {
           <div className="relative w-full aspect-[16/9]">
             <Image
               src={DASH_SRC}
-              alt="Dashboard Evaltia"
+              alt="Dashboard Exemy"
               fill
               priority
               sizes="(max-width: 768px) 94vw, 920px"
@@ -90,7 +90,7 @@ export function HeroEvaltia() {
             text-white/70
           "
         >
-          Bienvenido a Evaltia
+          Bienvenido a Exemy
         </motion.div>
 
         <motion.h1
@@ -169,7 +169,7 @@ export function HeroEvaltia() {
             </h2>
 
             <p className="mt-4 text-sm md:text-base text-white/85 leading-relaxed max-w-4xl">
-              En Evaltia entendemos que estudiar medicina no es seguir un único
+              En Exemy entendemos que estudiar medicina no es seguir un único
               método ni un único ritmo. Por eso construimos una plataforma que
               se adapta al contexto académico de cada estudiante.
             </p>
@@ -190,7 +190,7 @@ export function HeroEvaltia() {
             },
             {
               n: "03",
-              t: "Evaltia mejora contigo",
+              t: "Exemy mejora contigo",
               d: "Feedback real para mejorar el banco.",
             },
           ].map((i, idx) => (

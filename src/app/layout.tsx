@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Evaltia",
+  title: "Exemy",
   description: "Tu plataforma para estudiantes de medicina",
 };
 

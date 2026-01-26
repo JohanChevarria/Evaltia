@@ -37,7 +37,7 @@ export default function AdminTopbar({
           >
             <Image
               src="/evaltia-logo.png"
-              alt="Evaltia"
+              alt="Exemy"
               width={22}
               height={22}
               className="opacity-100"  // ← YA NO SE INVIERTE, SE VE BLANCO
@@ -46,7 +46,7 @@ export default function AdminTopbar({
 
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-[15px] text-gray-900">
-              Evaltia Studio
+              Exemy Studio
             </span>
             <span className="text-[11px] text-gray-500">
               Panel de administración
