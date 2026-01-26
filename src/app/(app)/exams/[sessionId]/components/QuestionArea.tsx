@@ -276,28 +276,78 @@ export function QuestionArea({
           </div>
         )}
 
-        {/* BOTONES */}
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setShowHint((v) => !v)}
-            disabled={!hasHint}
-            className={`inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font ${
-              !hasHint ? "opacity-50 cursor-not-allowed" : "hover:underline"
-            }`}
-          >
-            <Eye className="h-4 w-4" />
-            Ver pista
-          </button>
+        {isMatching && (
+          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold ev-question-font">
+              Relacionar conceptos
+            </p>
 
-          <button
-            type="button"
-            onClick={() => setNotesOpen((v) => !v)}
-            className="inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font hover:underline"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar notas
-          </button>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
+                  Conceptos
+                </div>
+                {MATCHING_LEFT_LABELS.map((label, idx) => {
+                  const value = matching.left[idx] ?? "";
+                  return (
+                    <div key={label} className="flex items-start gap-2">
+                      <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
+                        {label}
+                      </span>
+                      <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
+                        {value ? value : <span className="text-slate-400">[vacio]</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
+                  Definiciones
+                </div>
+                {MATCHING_RIGHT_LABELS.map((label, idx) => {
+                  const value = matching.right[idx] ?? "";
+                  return (
+                    <div key={label} className="flex items-start gap-2">
+                      <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
+                        {label}
+                      </span>
+                      <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
+                        {value ? value : <span className="text-slate-400">[vacio]</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* BOTONES */}
+        <div className="mt-4 flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowHint((v) => !v)}
+              disabled={!hasHint}
+              className={`inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font ${
+                !hasHint ? "opacity-50 cursor-not-allowed" : "hover:underline"
+              }`}
+            >
+              <Eye className="h-4 w-4" />
+              Ver pista
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setNotesOpen((v) => !v)}
+              className="inline-flex items-center gap-2 text-[13px] font-medium text-slate-600 ev-question-font hover:underline"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar notas
+            </button>
+          </div>
 
           <button
             type="button"
@@ -306,7 +356,7 @@ export function QuestionArea({
               if (el) clearHighlights(el);
               onResetMarks?.();
             }}
-            className="inline-flex items-center justify-center rounded-full border border-slate-200 p-2 text-slate-500 hover:border-slate-300 hover:text-slate-900"
+            className="ml-auto inline-flex items-center text-slate-400 hover:text-slate-700 cursor-pointer border-0 bg-transparent p-0"
             title="Reiniciar marcas"
             aria-label="Reiniciar marcas"
           >
@@ -361,57 +411,8 @@ export function QuestionArea({
         )}
       </div>
 
-      {isMatching && (
-        <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-4">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold ev-question-font">
-            Relacionar conceptos
-          </p>
-
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
-                Conceptos
-              </div>
-              {MATCHING_LEFT_LABELS.map((label, idx) => {
-                const value = matching.left[idx] ?? "";
-                return (
-                  <div key={label} className="flex items-start gap-2">
-                    <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
-                      {label}
-                    </span>
-                    <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
-                      {value ? value : <span className="text-slate-400">[vacio]</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide ev-question-font">
-                Definiciones
-              </div>
-              {MATCHING_RIGHT_LABELS.map((label, idx) => {
-                const value = matching.right[idx] ?? "";
-                return (
-                  <div key={label} className="flex items-start gap-2">
-                    <span className="w-6 text-[12px] font-semibold text-slate-500 mt-1 ev-question-font">
-                      {label}
-                    </span>
-                    <div className="flex-1 text-[14px] leading-6 text-slate-800 whitespace-pre-wrap break-words ev-question-font">
-                      {value ? value : <span className="text-slate-400">[vacio]</span>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* OPCIONES */}
-      {!isMatching && (
-        <div className="space-y-2">
+      <div className="space-y-2">
           {optionStates.map(
             ({ opt, uiLabel, isSelected, showCorrect, showIncorrect, showThisExplanation }, idx) => (
               <OptionItem
@@ -441,8 +442,7 @@ export function QuestionArea({
               {isAnswerCorrect ? "Respuesta correcta" : "Respuesta incorrecta"}
             </p>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -22,6 +22,9 @@ type QuestionRow = {
   difficulty: string | null;
   question_type: string | null;
   matching_data: Record<string, unknown> | null;
+
+  /** ✅ FIX: tipado correcto */
+  matching_key: number[] | null;
 };
 
 type OptionRow = {
@@ -33,11 +36,25 @@ type OptionRow = {
   university_id: string;
 };
 
+/** ✅ FIX: normalizador seguro para matching_key */
+function normalizeMatchingKey(raw: unknown): number[] | null {
+  if (!Array.isArray(raw)) return null;
+  const nums = raw
+    .map((x) => {
+      const n = typeof x === "number" ? x : Number(x);
+      return Number.isFinite(n) ? n : null;
+    })
+    .filter((x): x is number => x !== null);
+
+  // si está vacío, mejor null
+  return nums.length > 0 ? nums : null;
+}
+
 export default async function TopicEditorPage({ params }: PageProps) {
   const supabase = await createClient();
   const { uni, courseId, topicId } = await params;
 
-  // 1) SesiÃ³n
+  // 1) Sesión
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
   if (!user) redirect("/login");
@@ -66,7 +83,7 @@ export default async function TopicEditorPage({ params }: PageProps) {
     redirect(`/studio/${uniCode}`);
   }
 
-  // 4) Topic (tÃ­tulo)
+  // 4) Topic (título)
   const { data: topic } = await supabase
     .from("topics")
     .select("id, title, course_id")
@@ -75,7 +92,7 @@ export default async function TopicEditorPage({ params }: PageProps) {
 
   if (!topic) redirect(`/studio/${uniCode}/editor/${courseId}`);
 
-  // 5) Conceptos del topic (tus â€œbloquesâ€)
+  // 5) Conceptos del topic
   const { data: concepts, error: conceptsError } = await supabase
     .from("concepts")
     .select("id, title, order_number")
@@ -85,11 +102,11 @@ export default async function TopicEditorPage({ params }: PageProps) {
 
   console.log("SERVER DEBUG conceptsError:", conceptsError);
 
-  // 6) Preguntas del topic (âœ… incluye difficulty)
-  const { data: questions, error: questionsError } = await supabase
+  // 6) Preguntas del topic (incluye matching_key)
+  const { data: questionsRaw, error: questionsError } = await supabase
     .from("questions")
     .select(
-      "id, topic_id, text, created_at, university_id, concept_id, difficulty, question_type, matching_data"
+      "id, topic_id, text, created_at, university_id, concept_id, difficulty, question_type, matching_data, matching_key"
     )
     .eq("topic_id", topicId)
     .eq("university_id", uniRow.id)
@@ -97,20 +114,36 @@ export default async function TopicEditorPage({ params }: PageProps) {
 
   console.log("SERVER DEBUG questionsError:", questionsError);
 
-  // âœ… DEBUG temporal (server)
+  // ✅ Normaliza matching_key para que el client reciba number[] | null
+  const questions: QuestionRow[] = (questionsRaw ?? []).map((q: any) => ({
+    id: q.id,
+    topic_id: q.topic_id,
+    text: q.text ?? null,
+    created_at: q.created_at,
+    university_id: q.university_id,
+    concept_id: q.concept_id ?? null,
+    difficulty: q.difficulty ?? null,
+    question_type: q.question_type ?? null,
+    matching_data: (q.matching_data ?? null) as Record<string, unknown> | null,
+    matching_key: normalizeMatchingKey(q.matching_key),
+  }));
+
+  // ✅ DEBUG temporal (server)
   console.log("SERVER DEBUG topicId:", topicId);
   console.log("SERVER DEBUG uniRow.id:", uniRow?.id);
-  console.log("SERVER DEBUG questions count:", (questions ?? []).length);
-  console.log("SERVER DEBUG questions sample:", (questions ?? []).slice(0, 2));
+  console.log("SERVER DEBUG questions count:", questions.length);
+  console.log("SERVER DEBUG questions sample:", questions.slice(0, 2));
 
-  const questionIds = (questions ?? []).map((q: QuestionRow) => q.id);
+  const nonMatchingIds = questions
+    .filter((q) => q.question_type !== "matching")
+    .map((q) => q.id);
 
-  // 7) Opciones (si tu tabla options existe)
-  const { data: options } = questionIds.length
+  // 7) Opciones
+  const { data: options } = nonMatchingIds.length
     ? await supabase
         .from("options")
         .select("id, question_id, label, text, is_correct, university_id")
-        .in("question_id", questionIds)
+        .in("question_id", nonMatchingIds)
         .eq("university_id", uniRow.id)
         .order("label", { ascending: true })
     : { data: [] as OptionRow[] };
@@ -123,9 +156,8 @@ export default async function TopicEditorPage({ params }: PageProps) {
       topicId={topicId}
       topicTitle={topic.title}
       concepts={(concepts ?? []) as ConceptRow[]}
-      questions={(questions ?? []) as QuestionRow[]}
+      questions={questions}
       options={(options ?? []) as OptionRow[]}
     />
   );
 }
-

@@ -1,4 +1,3 @@
-// File: /Users/jchevarria/Evaltia/src/app/(public)/public components/HeroEvaltia.tsx
 "use client";
 
 import Link from "next/link";
@@ -12,7 +11,8 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-const DASH_SRC = "/landing/dashboard-screenshot.png";
+// ✅ Pon tu screenshot aquí (en /public/landing/)
+const DASH_SRC = "/landing/dashboard-screenshot.webp";
 
 /**
  * ✅ MISMO TONO QUE DIFFERENTIATOR
@@ -22,30 +22,55 @@ const GLASS_CARD =
 const GLASS_CARD_STRONG =
   "bg-[#1e2f42]/80 backdrop-blur-sm shadow-[0_30px_70px_rgba(0,0,0,0.35)]";
 
-function DashboardFrame({ children }: { children: React.ReactNode }) {
+function DashboardFrame() {
   return (
-    <div
-      className="
-        relative overflow-hidden rounded-3xl
-        bg-[#1e2f42]/70 backdrop-blur-sm
-        shadow-[0_30px_70px_rgba(0,0,0,0.35)]
-      "
-    >
-      {/* ✅ Barra superior MÁS CLARA (como antes), no negra */}
+    <div className="relative mx-auto w-full">
       <div
         className="
-          absolute top-0 left-0 right-0 h-12
-          bg-white/10 backdrop-blur-sm
-          flex items-center px-4 gap-2 z-10
+          relative overflow-hidden rounded-3xl
+          border border-white/15
+          bg-[#1e2f42]/70 backdrop-blur-sm
+          shadow-[0_30px_70px_rgba(0,0,0,0.35)]
         "
       >
-        <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/28" />
-        <span className="h-2.5 w-2.5 rounded-full bg-white/22" />
-        <div className="ml-4 h-2 w-40 rounded bg-white/20" />
+        {/* Top bar tipo browser */}
+        <div
+          className="
+            absolute top-0 left-0 right-0 h-12
+            bg-white/10 backdrop-blur-sm
+            flex items-center px-4 gap-2 z-10
+            border-b border-white/10
+          "
+        >
+          <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/28" />
+          <span className="h-2.5 w-2.5 rounded-full bg-white/22" />
+          <div className="ml-4 h-2 w-40 rounded bg-white/20" />
+        </div>
+
+        {/* Screen */}
+        <div className="pt-12 bg-white/6">
+          {/* ✅ Ratio estable: encaja perfecto en responsive */}
+          <div className="relative w-full aspect-[16/9]">
+            <Image
+              src={DASH_SRC}
+              alt="Dashboard Evaltia"
+              fill
+              priority
+              sizes="(max-width: 768px) 94vw, 920px"
+              className="object-cover object-top"
+            />
+
+            {/* Shine arriba */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
+            {/* Fade abajo para integrarse al hero */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-slate-950/35" />
+          </div>
+        </div>
       </div>
 
-      <div className="pt-12">{children}</div>
+      {/* Glow / sombra suave exterior */}
+      <div className="mx-auto mt-5 h-9 w-[92%] rounded-full bg-black/40 blur-2xl" />
     </div>
   );
 }
@@ -132,25 +157,7 @@ export function HeroEvaltia() {
         transition={{ duration: 0.45, delay: 0.14 }}
         className="mt-9"
       >
-        <div className="mx-auto max-w-6xl">
-          <DashboardFrame>
-            {/* ✅ NO blanco: “screen” translúcido y claro */}
-            <div className="bg-white/8">
-              <div className="relative h-[260px] sm:h-[340px] md:h-[420px]">
-                <Image
-                  src={DASH_SRC}
-                  alt="Dashboard Evaltia"
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 768px) 94vw, 920px"
-                />
-              </div>
-            </div>
-          </DashboardFrame>
-
-          <div className="mx-auto mt-5 h-9 w-[92%] rounded-full bg-black/40 blur-2xl" />
-        </div>
+        <DashboardFrame />
       </motion.div>
 
       {/* CÓMO FUNCIONA */}

@@ -44,7 +44,7 @@ export async function getSessionPayload(
   // ✅ FIX: no seleccionar columnas que NO existen (image_url, hint)
   const { data: questionRows, error: qError } = await supabase
     .from("questions")
-    .select("id, topic_id, course_id, university_id, text, question_type, matching_data")
+    .select("id, topic_id, course_id, university_id, text, question_type, matching_data, matching_key")
     .in("id", questionIds);
 
   if (qError) {
@@ -109,6 +109,7 @@ export async function getSessionPayload(
       options: optionsByQ.get(q.id) ?? [],
       question_type: (q as any).question_type ?? null,
       matching_data: (q as any).matching_data ?? null,
+      matching_key: (q as any).matching_key ?? null,
     });
   }
 

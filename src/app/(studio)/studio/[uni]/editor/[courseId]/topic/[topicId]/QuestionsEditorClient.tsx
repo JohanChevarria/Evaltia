@@ -34,11 +34,7 @@ type DraftOption = {
   is_correct: boolean;
 };
 
-type QuestionType =
-  | "default"
-  | "matching"
-  | "clinical_case"
-  | "premise_reason";
+type QuestionType = "default" | "matching" | "clinical_case" | "premise_reason";
 
 type MatchingData = {
   left: string[];
@@ -52,6 +48,10 @@ type QuestionRow = {
   difficulty?: string | null;
   question_type?: string | null;
   matching_data?: MatchingData | Record<string, unknown> | null;
+
+  /** ✅ NUEVO: clave canónica del matching (p.ej. [0,1,2,3]) */
+  matching_key?: number[] | null;
+
   concept_id?: string | null;
   conceptId?: string | null;
   concept?: string | null;
@@ -78,6 +78,9 @@ type Difficulty = "easy" | "medium" | "hard";
 const BASE_LABELS = ["A", "B", "C", "D", "E"];
 const MATCHING_LEFT_LABELS = ["A", "B", "C", "D"];
 const MATCHING_RIGHT_LABELS = ["I", "II", "III", "IV"];
+
+/** ✅ matching_key default: índice a índice */
+const DEFAULT_MATCHING_KEY = [0, 1, 2, 3];
 
 function nextLabel(existing: string[]) {
   const labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -121,8 +124,8 @@ function normalizeQuestionType(raw: unknown): QuestionType {
 
 function questionTypeLabel(t: QuestionType) {
   if (t === "matching") return "Relacionar conceptos";
-  if (t === "clinical_case") return "Caso clÃ­nico";
-  if (t === "premise_reason") return "Premisa/RazÃ³n";
+  if (t === "clinical_case") return "Caso clínico";
+  if (t === "premise_reason") return "Premisa/Razón";
   return "Predeterminado";
 }
 
@@ -149,7 +152,6 @@ function groupMeta(d: Difficulty) {
   if (d === "easy") {
     return {
       title: "Fácil",
-      // ✅ verde claro, distinto al verde de “respuesta correcta”
       wrap: "bg-emerald-50 border-emerald-200",
       text: "text-emerald-800",
       dot: "bg-emerald-400",
@@ -204,7 +206,6 @@ export default function QuestionsEditorClient({
   // ✅ Mantener un orden estable por order_number (si existe), luego fallback por “posición”
   const conceptsOrdered = useMemo(() => {
     const list = [...(concepts ?? [])];
-    // si algunos no tienen order_number, mantenlos al final pero estable por id
     list.sort((a, b) => {
       const ao = a.order_number ?? 1_000_000;
       const bo = b.order_number ?? 1_000_000;
@@ -212,7 +213,6 @@ export default function QuestionsEditorClient({
       return String(a.id).localeCompare(String(b.id));
     });
 
-    // aplicar override de título (solo visual)
     return list.map((c) => ({
       ...c,
       title: conceptTitleOverride[c.id] ?? c.title,
@@ -343,14 +343,21 @@ export default function QuestionsEditorClient({
   ) {
     setBusy(true);
     try {
-      const payload: { question_type: QuestionType; matching_data?: MatchingData } =
-        { question_type: t };
+      const payload: {
+        question_type: QuestionType;
+        matching_data?: MatchingData;
+        matching_key?: number[];
+      } = { question_type: t };
+
       if (t === "matching") {
         const normalized = normalizeMatchingData(currentMatching ?? {});
         payload.matching_data = {
           left: normalized.left,
           right: normalized.right,
         };
+
+        /** ✅ asegurar matching_key por defecto */
+        payload.matching_key = DEFAULT_MATCHING_KEY;
       }
 
       const { error } = await supabase
@@ -362,6 +369,19 @@ export default function QuestionsEditorClient({
       if (error) {
         alert(error.message);
         return;
+      }
+
+      if (t === "matching") {
+        const { error: delErr } = await supabase
+          .from("options")
+          .delete()
+          .eq("question_id", questionId)
+          .eq("university_id", universityId);
+
+        if (delErr) {
+          alert(delErr.message);
+          return;
+        }
       }
 
       router.refresh();
@@ -414,7 +434,9 @@ export default function QuestionsEditorClient({
   }
 
   const selectedConcept = useMemo(() => {
-    return (conceptsOrdered ?? []).find((c) => c.id === selectedConceptId) ?? null;
+    return (
+      (conceptsOrdered ?? []).find((c) => c.id === selectedConceptId) ?? null
+    );
   }, [conceptsOrdered, selectedConceptId]);
 
   const optionsByQ = useMemo(() => {
@@ -513,7 +535,7 @@ export default function QuestionsEditorClient({
     }
   }
 
-  /** ✅ FIX: Renombrar funcional + no reordena visualmente */
+  /** ✅ Renombrar funcional + no reordena visualmente */
   async function renameConcept() {
     if (!selectedConcept) {
       pushConceptStatus("error", "Primero elige un concepto.");
@@ -650,6 +672,19 @@ export default function QuestionsEditorClient({
   async function startEdit(q: QuestionRow) {
     setBusy(true);
     try {
+      const questionType = normalizeQuestionType(q?.question_type);
+      if (questionType === "matching") {
+        const matching = normalizeMatchingData(q?.matching_data);
+        setEditingQuestionId(q.id);
+        setDraft({
+          questionText: q.text ?? "",
+          options: [],
+          matchingLeft: matching.left,
+          matchingRight: matching.right,
+        });
+        return;
+      }
+
       const { data: existing, error } = await supabase
         .from("options")
         .select("id,label,text,explanation,is_correct")
@@ -758,8 +793,8 @@ export default function QuestionsEditorClient({
     });
   }
 
-  async function addDraftOption(questionId: string) {
-    if (!draft) return;
+  async function addDraftOption(questionId: string, isMatchingCurrent: boolean) {
+    if (!draft || isMatchingCurrent) return;
 
     const label = nextLabel(draft.options.map((o) => o.label));
 
@@ -796,8 +831,8 @@ export default function QuestionsEditorClient({
   }
 
   /** ✅ borrar opción (backend + draft) */
-  async function deleteOption(optionId: string) {
-    if (!draft) return;
+  async function deleteOption(optionId: string, isMatchingCurrent: boolean) {
+    if (!draft || isMatchingCurrent) return;
 
     // no dejar menos de 5
     if ((draft.options?.length ?? 0) <= 5) {
@@ -861,14 +896,22 @@ export default function QuestionsEditorClient({
 
     setBusy(true);
     try {
-      const payload: { text: string; matching_data?: MatchingData } = {
+      const payload: {
+        text: string;
+        matching_data?: MatchingData;
+        matching_key?: number[];
+      } = {
         text: draft.questionText.trim(),
       };
+
       if (isMatching) {
         payload.matching_data = {
           left: normalizeMatchingSide(draft.matchingLeft ?? [], true),
           right: normalizeMatchingSide(draft.matchingRight ?? [], true),
         };
+
+        /** ✅ asegurar matching_key */
+        payload.matching_key = DEFAULT_MATCHING_KEY;
       }
 
       const { error: qErr } = await supabase
@@ -879,20 +922,22 @@ export default function QuestionsEditorClient({
 
       if (qErr) return alert(qErr.message);
 
-      for (const o of draft.options) {
-        if (!o.id) continue;
+      if (!isMatching) {
+        for (const o of draft.options) {
+          if (!o.id) continue;
 
-        const { error: oErr } = await supabase
-          .from("options")
-          .update({
-            text: o.text ?? "",
-            explanation: o.explanation ?? "",
-            is_correct: !!o.is_correct,
-          })
-          .eq("id", o.id)
-          .eq("university_id", universityId);
+          const { error: oErr } = await supabase
+            .from("options")
+            .update({
+              text: o.text ?? "",
+              explanation: o.explanation ?? "",
+              is_correct: !!o.is_correct,
+            })
+            .eq("id", o.id)
+            .eq("university_id", universityId);
 
-        if (oErr) return alert(oErr.message);
+          if (oErr) return alert(oErr.message);
+        }
       }
 
       setEditingQuestionId(null);
@@ -988,7 +1033,7 @@ export default function QuestionsEditorClient({
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return "";
     if (ids.length === 1) {
-    const q = (questions ?? []).find((x) => x.id === ids[0]);
+      const q = (questions ?? []).find((x) => x.id === ids[0]);
       return q?.text ? clampText(q.text, 160) : "Pregunta seleccionada";
     }
     return `${ids.length} preguntas seleccionadas`;
@@ -1078,8 +1123,6 @@ export default function QuestionsEditorClient({
                 </option>
               ))}
             </select>
-
-            {/* ✅ Quitado: “Bloque seleccionado: …” (el que te salía subrayado en amarillo) */}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1202,497 +1245,546 @@ export default function QuestionsEditorClient({
               >
                 <div className="divide-y">
                   {orderedQuestions.map((q, idx) => {
-                  const qOpts = optionsByQ.get(q.id) ?? [];
-                  const isEditing = editingQuestionId === q.id;
-                  const isPinned = pinnedIds.has(q.id);
-                  const isChecked = selectedIds.has(q.id);
+                    const qOpts = optionsByQ.get(q.id) ?? [];
+                    const isEditing = editingQuestionId === q.id;
+                    const isPinned = pinnedIds.has(q.id);
+                    const isChecked = selectedIds.has(q.id);
 
-                  const diff: Difficulty = normalizeDifficulty(q?.difficulty);
-                  const questionType: QuestionType = normalizeQuestionType(
-                    q?.question_type
-                  );
-                  const isMatching = questionType === "matching";
-                  const matching = normalizeMatchingData(q?.matching_data);
+                    const diff: Difficulty = normalizeDifficulty(q?.difficulty);
+                    const questionType: QuestionType = normalizeQuestionType(
+                      q?.question_type
+                    );
+                    const isMatching = questionType === "matching";
+                    const matching = normalizeMatchingData(q?.matching_data);
 
-                  const prev = orderedQuestions[idx - 1];
-                  const prevDiff: Difficulty | null = prev
-                    ? normalizeDifficulty(prev?.difficulty)
-                    : null;
+                    const prev = orderedQuestions[idx - 1];
+                    const prevDiff: Difficulty | null = prev
+                      ? normalizeDifficulty(prev?.difficulty)
+                      : null;
 
-                  const showDivider = idx === 0 || prevDiff !== diff;
-                  const meta = groupMeta(diff);
+                    const showDivider = idx === 0 || prevDiff !== diff;
+                    const meta = groupMeta(diff);
 
-                  return (
-                    <div key={q.id}>
-                      {/* ✅ Divisor por dificultad */}
-                      {showDivider ? (
-                        <div
-                          className={`px-4 py-2 border-y ${meta.wrap} flex items-center justify-between`}
-                        >
-                          <div className={`text-xs font-bold ${meta.text} flex items-center gap-2`}>
-                            <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                            {meta.title}
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            Agrupación por nivel
-                          </div>
-                        </div>
-                      ) : null}
-
-                      <div className="p-4">
-                        <div className="grid grid-cols-12 gap-4">
-                          <div className="col-span-12 md:col-span-5 flex gap-3">
-                            {selectMode ? (
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => toggleSelected(q.id)}
-                                className="mt-1 h-5 w-5"
-                                aria-label="Seleccionar pregunta"
+                    return (
+                      <div key={q.id}>
+                        {/* ✅ Divisor por dificultad */}
+                        {showDivider ? (
+                          <div
+                            className={`px-4 py-2 border-y ${meta.wrap} flex items-center justify-between`}
+                          >
+                            <div
+                              className={`text-xs font-bold ${meta.text} flex items-center gap-2`}
+                            >
+                              <span
+                                className={`h-2 w-2 rounded-full ${meta.dot}`}
                               />
-                            ) : (
-                              <div className="w-5" />
-                            )}
-
-                            <div className="min-w-0 w-full">
-                              <div className="flex items-start justify-between gap-2">
-                                {!isEditing ? (
-                                  <div className="min-w-0 w-full">
-                                    <div className="flex items-start gap-2">
-                                      {isPinned && (
-                                        <Pin
-                                          className="h-4 w-4 mt-[2px] text-slate-500"
-                                          aria-hidden="true"
-                                        />
-                                      )}
-                                      <p className="text-sm font-semibold text-slate-900 whitespace-pre-wrap break-words">
-                                        {q.text}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <textarea
-                                    value={draft?.questionText ?? ""}
-                                    onChange={(e) =>
-                                      setDraft((d) =>
-                                        d
-                                          ? { ...d, questionText: e.target.value }
-                                          : d
-                                      )
-                                    }
-                                    rows={4}
-                                    className="w-full text-sm font-semibold border border-slate-200 rounded-lg px-2 py-2 resize-y"
-                                    placeholder="Escribe la pregunta (puede tener Enter)…"
-                                  />
-                                )}
-
-                                {!selectMode && !isEditing ? (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => startEdit(q)}
-                                      className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                                      aria-label="Editar"
-                                      disabled={busy}
-                                      title="Editar"
-                                    >
-                                      ✎
-                                    </button>
-
-                                    <FeedbackButton
-                                      payload={{
-                                        questionId: q.id,
-                                        scope: "question",
-                                      }}
-                                      onClick={openFeedback}
-                                      className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                                    />
-                                  </div>
-                                ) : null}
-
-                                {!selectMode && isEditing ? (
-                                  <div className="flex flex-col items-end gap-2">
-                                    <button
-                                      onClick={() => saveEdit(q)}
-                                      disabled={busy}
-                                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                                    >
-                                      Guardar
-                                    </button>
-
-                                    <button
-                                      onClick={() => addDraftOption(q.id)}
-                                      disabled={busy}
-                                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                                    >
-                                      + Opción
-                                    </button>
-
-                                    <button
-                                      onClick={cancelEdit}
-                                      disabled={busy}
-                                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                                    >
-                                      Cancelar
-                                    </button>
-                                  </div>
-                                ) : null}
-                              </div>
-
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                <span className="inline-flex text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                                  código: {q.id.slice(0, 8)}…
-                                </span>
-
-                                <span className="inline-flex text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                                  opciones: {qOpts.length}
-                                </span>
-                              </div>
-
-                              {/* ✅ Área “Nivel” más pequeña y en 2 columnas con selector de “Tipo de pregunta” */}
-                              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {/* NIVEL */}
-                                <div
-                                  className="rounded-xl border border-slate-200 bg-white overflow-hidden"
-                                  data-difficulty-root={String(q.id)}
-                                >
-                                  <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
-                                    Nivel
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setDifficultyOpenId((prev) =>
-                                        prev === String(q.id) ? null : String(q.id)
-                                      )
-                                    }
-                                    disabled={busy}
-                                    className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-50"
-                                  >
-                                    <span className="text-sm font-semibold text-slate-800">
-                                      {difficultyLabel(diff)}
-                                    </span>
-                                    <span className="text-slate-400 text-lg leading-none">
-                                      ▾
-                                    </span>
-                                  </button>
-
-                                  {difficultyOpenId === String(q.id) ? (
-                                    <div className="border-t border-slate-200">
-                                      {(
-                                        [
-                                          { v: "easy", t: "Fácil" },
-                                          { v: "medium", t: "Medio" },
-                                          { v: "hard", t: "Difícil" },
-                                        ] as const
-                                      ).map((x) => {
-                                        const active = diff === x.v;
-                                        return (
-                                          <button
-                                            key={x.v}
-                                            type="button"
-                                            onClick={async () => {
-                                              await setDifficulty(q.id, x.v);
-                                              setDifficultyOpenId(null);
-                                            }}
-                                            disabled={busy}
-                                            className={`w-full text-left px-3 py-2 text-sm font-semibold border-b border-slate-100 last:border-b-0
-                                              ${
-                                                active
-                                                  ? "bg-slate-100 text-slate-900"
-                                                  : "bg-white text-slate-700 hover:bg-slate-50"
-                                              }`}
-                                          >
-                                            {x.t}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : null}
-                                </div>
-                                {/* TIPO DE PREGUNTA */}
-                                <div
-                                  className="rounded-xl border border-slate-200 bg-white overflow-hidden"
-                                  data-question-type-root={String(q.id)}
-                                >
-                                  <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
-                                    Tipo de pregunta
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setQuestionTypeOpenId((prev) =>
-                                        prev === String(q.id) ? null : String(q.id)
-                                      )
-                                    }
-                                    disabled={busy}
-                                    className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-50"
-                                  >
-                                    <span className="text-sm font-semibold text-slate-800">
-                                      {questionTypeLabel(questionType)}
-                                    </span>
-                                    <span className="text-slate-400 text-lg leading-none">
-                                      ▾
-                                    </span>
-                                  </button>
-
-                                  {questionTypeOpenId === String(q.id) ? (
-                                    <div className="border-t border-slate-200">
-                                      {(
-                                        [
-                                          { v: "default", t: "Predeterminado" },
-                                          { v: "matching", t: "Relacionar conceptos" },
-                                          { v: "clinical_case", t: "Caso clínico" },
-                                          { v: "premise_reason", t: "Premisa/Razón" },
-                                        ] as const
-                                      ).map((x) => {
-                                        const active = questionType === x.v;
-                                        return (
-                                          <button
-                                            key={x.v}
-                                            type="button"
-                                            onClick={async () => {
-                                              await setQuestionType(
-                                                q.id,
-                                                x.v,
-                                                q?.matching_data
-                                              );
-                                              setQuestionTypeOpenId(null);
-                                            }}
-                                            disabled={busy}
-                                            className={`w-full text-left px-3 py-2 text-sm font-semibold border-b border-slate-100 last:border-b-0
-                                              ${
-                                                active
-                                                  ? "bg-slate-100 text-slate-900"
-                                                  : "bg-white text-slate-700 hover:bg-slate-50"
-                                              }`}
-                                          >
-                                            {x.t}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : null}
-                                </div>
-                                {/* Etiquetas (próximamente) */}
-                                <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
-                                  <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
-                                    Etiquetas (próximamente)
-                                  </div>
-                                  <div className="px-3 py-2 text-xs text-slate-500">
-                                    Aquí irá tu selector de tags cuando me las digas.
-                                  </div>
-                                </div>
-                              </div>
+                              {meta.title}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              Agrupación por nivel
                             </div>
                           </div>
+                        ) : null}
 
-                          <div className="col-span-12 md:col-span-7 space-y-3">
-                            {isMatching ? (
-                              <div className="rounded-xl border border-slate-200 overflow-hidden">
-                                <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
-                                  Relacionar conceptos
-                                </div>
-                                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                                      Conceptos
-                                    </div>
-                                    {MATCHING_LEFT_LABELS.map((label, idx) => {
-                                      const value = isEditing
-                                        ? draft?.matchingLeft?.[idx] ?? ""
-                                        : matching.left[idx] ?? "";
-                                      return (
-                                        <div key={label} className="flex items-start gap-2">
-                                          <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
-                                            {label}
-                                          </span>
-                                          {isEditing ? (
-                                            <input
-                                              value={value}
-                                              onChange={(e) =>
-                                                updateMatchingLeft(idx, e.target.value)
-                                              }
-                                              className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                                              placeholder={`Concepto ${label}`}
-                                            />
-                                          ) : (
-                                            <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                              {value ? (
-                                                value
-                                              ) : (
-                                                <span className="text-slate-400">[vacío]</span>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                  <div className="space-y-2">
-                                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-                                      Definiciones
-                                    </div>
-                                    {MATCHING_RIGHT_LABELS.map((label, idx) => {
-                                      const value = isEditing
-                                        ? draft?.matchingRight?.[idx] ?? ""
-                                        : matching.right[idx] ?? "";
-                                      return (
-                                        <div key={label} className="flex items-start gap-2">
-                                          <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
-                                            {label}
-                                          </span>
-                                          {isEditing ? (
-                                            <input
-                                              value={value}
-                                              onChange={(e) =>
-                                                updateMatchingRight(idx, e.target.value)
-                                              }
-                                              className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
-                                              placeholder={`Definición ${label}`}
-                                            />
-                                          ) : (
-                                            <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
-                                              {value ? (
-                                                value
-                                              ) : (
-                                                <span className="text-slate-400">[vacío]</span>
-                                              )}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-                            ) : null}
+                        <div className="p-4">
+                          <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-12 md:col-span-5 flex gap-3">
+                              {selectMode ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => toggleSelected(q.id)}
+                                  className="mt-1 h-5 w-5"
+                                  aria-label="Seleccionar pregunta"
+                                />
+                              ) : (
+                                <div className="w-5" />
+                              )}
 
-                            <div className="rounded-xl border border-slate-200 overflow-hidden">
-                              <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
-                                Opciones (mínimo 5) — 1 o más correctas
-                              </div>
-
-                              <div className="divide-y">
-                                {(isEditing ? draft?.options ?? [] : qOpts).map(
-                                  (o) => {
-                                    const isCorrectView =
-                                      !isEditing && !!o?.is_correct;
-
-                                    return (
-                                      <div
-                                        key={o.label ?? o.id}
-                                        className={`px-3 py-2 flex gap-3 text-sm items-start
-                                          ${isCorrectView ? "bg-green-50" : "bg-white"}`}
-                                      >
-                                        {/* ✅ Columna letra + icono delete (solo en edición) */}
-                                        <div className="w-8 flex flex-col items-center pt-[2px]">
-                                          <span className="font-bold text-slate-600 leading-none">
-                                            {o.label}.
-                                          </span>
-
-                                          {isEditing ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => deleteOption(o.id)}
-                                              disabled={busy}
-                                              className="mt-1 text-[11px] leading-none text-slate-400 hover:text-red-600"
-                                              aria-label={`Eliminar opción ${o.label}`}
-                                              title="Eliminar opción"
-                                            >
-                                              🗑
-                                            </button>
-                                          ) : null}
-                                        </div>
-
-                                        {!isEditing ? (
-                                          <div className="flex-1 min-w-0">
-                                            <div className="whitespace-pre-wrap break-words">
-                                              {o.text || (
-                                                <span className="text-slate-400">
-                                                  [vacío]
-                                                </span>
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="flex-1 min-w-0 flex flex-col gap-2">
-                                            <div className="flex items-center gap-2">
-                                              <input
-                                                value={o.text ?? ""}
-                                                onChange={(e) => {
-                                                  setDraft((d) => {
-                                                    if (!d) return d;
-                                                    return {
-                                                      ...d,
-                                                      options: d.options.map((x) =>
-                                                        x.label === o.label
-                                                          ? {
-                                                              ...x,
-                                                              text: e.target.value,
-                                                            }
-                                                          : x
-                                                      ),
-                                                    };
-                                                  });
-                                                }}
-                                                className="flex-1 border border-slate-200 rounded-lg px-2 py-1"
-                                                placeholder={`Texto opción ${o.label}`}
-                                              />
-
-                                              <label className="flex items-center gap-2 text-xs text-slate-600">
-                                                <input
-                                                  type="checkbox"
-                                                  checked={!!o.is_correct}
-                                                  onChange={() => toggleCorrect(o.label)}
-                                                />
-                                                Correcta
-                                              </label>
-                                            </div>
-
-                                            <input
-                                              value={o.explanation ?? ""}
-                                              onChange={(e) => {
-                                                setDraft((d) => {
-                                                  if (!d) return d;
-                                                  return {
-                                                    ...d,
-                                                    options: d.options.map((x) =>
-                                                      x.label === o.label
-                                                        ? {
-                                                            ...x,
-                                                            explanation: e.target.value,
-                                                          }
-                                                        : x
-                                                    ),
-                                                  };
-                                                });
-                                              }}
-                                              className="border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                                              placeholder="Explicación (solo se ve en edición)"
-                                            />
-                                          </div>
+                              <div className="min-w-0 w-full">
+                                <div className="flex items-start justify-between gap-2">
+                                  {!isEditing ? (
+                                    <div className="min-w-0 w-full">
+                                      <div className="flex items-start gap-2">
+                                        {isPinned && (
+                                          <Pin
+                                            className="h-4 w-4 mt-[2px] text-slate-500"
+                                            aria-hidden="true"
+                                          />
                                         )}
+                                        <p className="text-sm font-semibold text-slate-900 whitespace-pre-wrap break-words">
+                                          {q.text}
+                                        </p>
                                       </div>
-                                    );
-                                  }
-                                )}
+                                    </div>
+                                  ) : (
+                                    <textarea
+                                      value={draft?.questionText ?? ""}
+                                      onChange={(e) =>
+                                        setDraft((d) =>
+                                          d
+                                            ? {
+                                                ...d,
+                                                questionText: e.target.value,
+                                              }
+                                            : d
+                                        )
+                                      }
+                                      rows={4}
+                                      className="w-full text-sm font-semibold border border-slate-200 rounded-lg px-2 py-2 resize-y"
+                                      placeholder="Escribe la pregunta (puede tener Enter)…"
+                                    />
+                                  )}
+
+                                  {!selectMode && !isEditing ? (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => startEdit(q)}
+                                        className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                                        aria-label="Editar"
+                                        disabled={busy}
+                                        title="Editar"
+                                      >
+                                        ✎
+                                      </button>
+
+                                      <FeedbackButton
+                                        payload={{
+                                          questionId: q.id,
+                                          scope: "question",
+                                        }}
+                                        onClick={openFeedback}
+                                        className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                                      />
+                                    </div>
+                                  ) : null}
+
+                                  {!selectMode && isEditing ? (
+                                    <div className="flex flex-col items-end gap-2">
+                                      <button
+                                        onClick={() => saveEdit(q)}
+                                        disabled={busy}
+                                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                                      >
+                                        Guardar
+                                      </button>
+
+                                      {!isMatching ? (
+                                        <button
+                                          onClick={() => addDraftOption(q.id, isMatching)}
+                                          disabled={busy}
+                                          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                                        >
+                                          + Opción
+                                        </button>
+                                      ) : null}
+
+                                      <button
+                                        onClick={cancelEdit}
+                                        disabled={busy}
+                                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                                      >
+                                        Cancelar
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                </div>
+
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <span className="inline-flex text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                                    código: {q.id.slice(0, 8)}…
+                                  </span>
+
+                                  {!isMatching ? (
+                                    <span className="inline-flex text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                                      opciones: {qOpts.length}
+                                    </span>
+                                  ) : null}
+                                </div>
+
+                                {/* ✅ Área “Nivel” + “Tipo de pregunta” */}
+                                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {/* NIVEL */}
+                                  <div
+                                    className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                                    data-difficulty-root={String(q.id)}
+                                  >
+                                    <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
+                                      Nivel
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setDifficultyOpenId((prev) =>
+                                          prev === String(q.id)
+                                            ? null
+                                            : String(q.id)
+                                        )
+                                      }
+                                      disabled={busy}
+                                      className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-50"
+                                    >
+                                      <span className="text-sm font-semibold text-slate-800">
+                                        {difficultyLabel(diff)}
+                                      </span>
+                                      <span className="text-slate-400 text-lg leading-none">
+                                        ▾
+                                      </span>
+                                    </button>
+
+                                    {difficultyOpenId === String(q.id) ? (
+                                      <div className="border-t border-slate-200">
+                                        {(
+                                          [
+                                            { v: "easy", t: "Fácil" },
+                                            { v: "medium", t: "Medio" },
+                                            { v: "hard", t: "Difícil" },
+                                          ] as const
+                                        ).map((x) => {
+                                          const active = diff === x.v;
+                                          return (
+                                            <button
+                                              key={x.v}
+                                              type="button"
+                                              onClick={async () => {
+                                                await setDifficulty(q.id, x.v);
+                                                setDifficultyOpenId(null);
+                                              }}
+                                              disabled={busy}
+                                              className={`w-full text-left px-3 py-2 text-sm font-semibold border-b border-slate-100 last:border-b-0
+                                                ${
+                                                  active
+                                                    ? "bg-slate-100 text-slate-900"
+                                                    : "bg-white text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                              {x.t}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : null}
+                                  </div>
+
+                                  {/* TIPO DE PREGUNTA */}
+                                  <div
+                                    className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                                    data-question-type-root={String(q.id)}
+                                  >
+                                    <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
+                                      Tipo de pregunta
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setQuestionTypeOpenId((prev) =>
+                                          prev === String(q.id)
+                                            ? null
+                                            : String(q.id)
+                                        )
+                                      }
+                                      disabled={busy}
+                                      className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-slate-50"
+                                    >
+                                      <span className="text-sm font-semibold text-slate-800">
+                                        {questionTypeLabel(questionType)}
+                                      </span>
+                                      <span className="text-slate-400 text-lg leading-none">
+                                        ▾
+                                      </span>
+                                    </button>
+
+                                    {questionTypeOpenId === String(q.id) ? (
+                                      <div className="border-t border-slate-200">
+                                        {(
+                                          [
+                                            { v: "default", t: "Predeterminado" },
+                                            {
+                                              v: "matching",
+                                              t: "Relacionar conceptos",
+                                            },
+                                            { v: "clinical_case", t: "Caso clínico" },
+                                            {
+                                              v: "premise_reason",
+                                              t: "Premisa/Razón",
+                                            },
+                                          ] as const
+                                        ).map((x) => {
+                                          const active = questionType === x.v;
+                                          return (
+                                            <button
+                                              key={x.v}
+                                              type="button"
+                                              onClick={async () => {
+                                                await setQuestionType(
+                                                  q.id,
+                                                  x.v,
+                                                  q?.matching_data
+                                                );
+                                                setQuestionTypeOpenId(null);
+                                              }}
+                                              disabled={busy}
+                                              className={`w-full text-left px-3 py-2 text-sm font-semibold border-b border-slate-100 last:border-b-0
+                                                ${
+                                                  active
+                                                    ? "bg-slate-100 text-slate-900"
+                                                    : "bg-white text-slate-700 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                              {x.t}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : null}
+                                  </div>
+
+                                  <div className="md:col-span-2 rounded-xl border border-slate-200 bg-white overflow-hidden">
+                                    <div className="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-50">
+                                      Etiquetas (próximamente)
+                                    </div>
+                                    <div className="px-3 py-2 text-xs text-slate-500">
+                                      Aquí irá tu selector de tags cuando me las
+                                      digas.
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
 
-                            <div className="h-2 w-full rounded bg-slate-100" />
+                            <div className="col-span-12 md:col-span-7 space-y-3">
+                              {isMatching ? (
+                                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                  <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
+                                    Relacionar conceptos
+                                  </div>
+                                  <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                                        Conceptos
+                                      </div>
+                                      {MATCHING_LEFT_LABELS.map((label, idx) => {
+                                        const value = isEditing
+                                          ? draft?.matchingLeft?.[idx] ?? ""
+                                          : matching.left[idx] ?? "";
+                                        return (
+                                          <div
+                                            key={label}
+                                            className="flex items-start gap-2"
+                                          >
+                                            <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
+                                              {label}
+                                            </span>
+                                            {isEditing ? (
+                                              <input
+                                                value={value}
+                                                onChange={(e) =>
+                                                  updateMatchingLeft(
+                                                    idx,
+                                                    e.target.value
+                                                  )
+                                                }
+                                                className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                                placeholder={`Concepto ${label}`}
+                                              />
+                                            ) : (
+                                              <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                                {value ? (
+                                                  value
+                                                ) : (
+                                                  <span className="text-slate-400">
+                                                    [vacío]
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                                        Definiciones
+                                      </div>
+                                      {MATCHING_RIGHT_LABELS.map((label, idx) => {
+                                        const value = isEditing
+                                          ? draft?.matchingRight?.[idx] ?? ""
+                                          : matching.right[idx] ?? "";
+                                        return (
+                                          <div
+                                            key={label}
+                                            className="flex items-start gap-2"
+                                          >
+                                            <span className="w-5 text-xs font-semibold text-slate-500 mt-1">
+                                              {label}
+                                            </span>
+                                            {isEditing ? (
+                                              <input
+                                                value={value}
+                                                onChange={(e) =>
+                                                  updateMatchingRight(
+                                                    idx,
+                                                    e.target.value
+                                                  )
+                                                }
+                                                className="flex-1 border border-slate-200 rounded-lg px-2 py-1 text-sm"
+                                                placeholder={`Definición ${label}`}
+                                              />
+                                            ) : (
+                                              <div className="flex-1 text-sm text-slate-800 whitespace-pre-wrap break-words">
+                                                {value ? (
+                                                  value
+                                                ) : (
+                                                  <span className="text-slate-400">
+                                                    [vacío]
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              {!isMatching ? (
+                                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                                  <div className="px-3 py-2 bg-slate-50 text-xs font-semibold text-slate-600">
+                                    Opciones (mínimo 5) — 1 o más correctas
+                                  </div>
+
+                                  <div className="divide-y">
+                                    {(isEditing ? draft?.options ?? [] : qOpts).map(
+                                      (o) => {
+                                        const isCorrectView =
+                                          !isEditing && !!o?.is_correct;
+
+                                        return (
+                                          <div
+                                            key={o.label ?? o.id}
+                                            className={`px-3 py-2 flex gap-3 text-sm items-start ${
+                                              isCorrectView ? "bg-green-50" : "bg-white"
+                                            }`}
+                                          >
+                                            {/* ✅ Columna letra + icono delete (solo en edición) */}
+                                            <div className="w-8 flex flex-col items-center pt-[2px]">
+                                              <span className="font-bold text-slate-600 leading-none">
+                                                {o.label}.
+                                              </span>
+
+                                              {isEditing ? (
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    deleteOption(o.id, isMatching)
+                                                  }
+                                                  disabled={busy}
+                                                  className="mt-1 text-[11px] leading-none text-slate-400 hover:text-red-600"
+                                                  aria-label={`Eliminar opción ${o.label}`}
+                                                  title="Eliminar opción"
+                                                >
+                                                  🗑
+                                                </button>
+                                              ) : null}
+                                            </div>
+
+                                            {!isEditing ? (
+                                              <div className="flex-1 min-w-0">
+                                                <div className="whitespace-pre-wrap break-words">
+                                                  {o.text || (
+                                                    <span className="text-slate-400">
+                                                      [vacío]
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                                <div className="flex items-center gap-2">
+                                                  <input
+                                                    value={o.text ?? ""}
+                                                    onChange={(e) => {
+                                                      setDraft((d) => {
+                                                        if (!d) return d;
+                                                        return {
+                                                          ...d,
+                                                          options: d.options.map((x) =>
+                                                            x.label === o.label
+                                                              ? {
+                                                                  ...x,
+                                                                  text: e.target.value,
+                                                                }
+                                                              : x
+                                                          ),
+                                                        };
+                                                      });
+                                                    }}
+                                                    className="flex-1 border border-slate-200 rounded-lg px-2 py-1"
+                                                    placeholder={`Texto opción ${o.label}`}
+                                                  />
+
+                                                  <label className="flex items-center gap-2 text-xs text-slate-600">
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={!!o.is_correct}
+                                                      onChange={() =>
+                                                        toggleCorrect(o.label)
+                                                      }
+                                                    />
+                                                    Correcta
+                                                  </label>
+                                                </div>
+
+                                                <input
+                                                  value={o.explanation ?? ""}
+                                                  onChange={(e) => {
+                                                    setDraft((d) => {
+                                                      if (!d) return d;
+                                                      return {
+                                                        ...d,
+                                                        options: d.options.map((x) =>
+                                                          x.label === o.label
+                                                            ? {
+                                                                ...x,
+                                                                explanation:
+                                                                  e.target.value,
+                                                              }
+                                                            : x
+                                                        ),
+                                                      };
+                                                    });
+                                                  }}
+                                                  className="border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                                                  placeholder="Explicación (solo se ve en edición)"
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      }
+                                    )}
+                                  </div>
+                                </div>
+                              ) : null}
+
+                              <div className="h-2 w-full rounded bg-slate-100" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 </div>
               </div>
             )}
           </section>
         </div>
 
+        {/* ✅ Sticky bar inferior */}
         <div className="sticky bottom-0 z-10">
           <div className="mx-auto max-w-[1400px]">
             <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl shadow-sm px-4 py-3 flex items-center justify-between">
@@ -1822,11 +1914,3 @@ export default function QuestionsEditorClient({
     </div>
   );
 }
-
-
-
-
-
-
-
-

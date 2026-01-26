@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { buildMatchingExamOptions } from "../../../../lib/matchingOptions";
 
 type Params = {
   params: Promise<{ sessionId: string }>;
@@ -66,17 +67,57 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "La pregunta no pertenece a esta sesi\u00f3n." }, { status: 400 });
   }
 
-  const { data: options } = await supabase
-    .from("options")
-    .select("label, is_correct")
-    .eq("question_id", questionId);
+  const { data: question, error: questionError } = await supabase
+    .from("questions")
+    .select("id, question_type, matching_key")
+    .eq("id", questionId)
+    .single();
 
-  const selected = (options ?? []).find(
-    (opt: any) => (opt.label ?? "").toString().toUpperCase() === optionLabel.toUpperCase()
-  );
+  if (questionError || !question) {
+    return NextResponse.json({ error: "Pregunta no encontrada." }, { status: 404 });
+  }
 
-  if (!selected) {
-    return NextResponse.json({ error: "Opci\u00f3n inv\u00e1lida." }, { status: 400 });
+  const questionType = (question as any).question_type ?? "";
+  const isMatching = questionType.toString().toLowerCase() === "matching";
+
+  let isCorrect = false;
+
+  if (isMatching) {
+    const normalizedLabel = optionLabel.toUpperCase();
+    if (!/^M[1-5]$/.test(normalizedLabel)) {
+      return NextResponse.json({ error: "Opci\u00f3n inv\u00e1lida." }, { status: 400 });
+    }
+
+    const matchingOptions = buildMatchingExamOptions({
+      sessionId,
+      questionId,
+      matching_key: (question as any).matching_key,
+    });
+
+    const selected = matchingOptions.find(
+      (opt) => (opt.label ?? "").toString().toUpperCase() === normalizedLabel
+    );
+
+    if (!selected) {
+      return NextResponse.json({ error: "Opci\u00f3n inv\u00e1lida." }, { status: 400 });
+    }
+
+    isCorrect = !!selected.is_correct;
+  } else {
+    const { data: options } = await supabase
+      .from("options")
+      .select("label, is_correct")
+      .eq("question_id", questionId);
+
+    const selected = (options ?? []).find(
+      (opt: any) => (opt.label ?? "").toString().toUpperCase() === optionLabel.toUpperCase()
+    );
+
+    if (!selected) {
+      return NextResponse.json({ error: "Opci\u00f3n inv\u00e1lida." }, { status: 400 });
+    }
+
+    isCorrect = !!(selected as any).is_correct;
   }
 
   const { data: lastAnswer } = await supabase
@@ -93,8 +134,6 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const attempt = ((lastAnswer as any)?.attempt ?? 0) + 1;
-  const isCorrect = !!(selected as any).is_correct;
-
   const { data: inserted, error: insertError } = await supabase
     .from("exam_answers")
     .insert({

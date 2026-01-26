@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { shuffleWithSeed } from "../lib/shuffle";
+import { buildMatchingExamOptions } from "../lib/matchingOptions";
 import type {
   ExamAnswer,
   ExamMode,
@@ -166,7 +167,14 @@ export default function ExamSolveClient({ payload }: Props) {
     for (const q of orderedQuestions) {
       const isMatching = (q.question_type ?? "").toString().toLowerCase() === "matching";
       if (isMatching) {
-        map.set(q.id, []);
+        map.set(
+          q.id,
+          buildMatchingExamOptions({
+            sessionId: session.id,
+            questionId: q.id,
+            matching_key: q.matching_key,
+          })
+        );
         continue;
       }
       const seedLocal = `${session.id}-${q.id}`;

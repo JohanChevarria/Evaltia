@@ -25,6 +25,7 @@ export type ExamQuestion = {
   options: ExamOption[];
   question_type?: string | null;
   matching_data?: MatchingData | null;
+  matching_key?: number[] | null;
 };
 
 export type ExamSession = {
