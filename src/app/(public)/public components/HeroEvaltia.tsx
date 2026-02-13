@@ -7,99 +7,43 @@ import Differentiator from "./Differentiator";
 import FAQEvaltia from "./FAQEvaltia";
 
 const fadeUp = {
-  initial: { opacity: 0, y: 12 },
+  initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
 };
 
-// ✅ Pon tu screenshot aquí (en /public/landing/)
-const DASH_SRC = "/landing/dashboard-screenshot.webp";
-
-/**
- * ✅ MISMO TONO QUE DIFFERENTIATOR
- */
-const GLASS_CARD =
-  "bg-[#1e2f42]/70 backdrop-blur-sm shadow-[0_30px_70px_rgba(0,0,0,0.35)]";
-const GLASS_CARD_STRONG =
-  "bg-[#1e2f42]/80 backdrop-blur-sm shadow-[0_30px_70px_rgba(0,0,0,0.35)]";
-
 function DashboardFrame() {
   return (
-    <div className="relative mx-auto w-full">
-      <div
-        className="
-          relative overflow-hidden rounded-3xl
-          border border-white/15
-          bg-[#1e2f42]/70 backdrop-blur-sm
-          shadow-[0_30px_70px_rgba(0,0,0,0.35)]
-        "
-      >
-        {/* Top bar tipo browser */}
-        <div
-          className="
-            absolute top-0 left-0 right-0 h-12
-            bg-white/10 backdrop-blur-sm
-            flex items-center px-4 gap-2 z-10
-            border-b border-white/10
-          "
-        >
-          <span className="h-2.5 w-2.5 rounded-full bg-white/40" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/28" />
-          <span className="h-2.5 w-2.5 rounded-full bg-white/22" />
-          <div className="ml-4 h-2 w-40 rounded bg-white/20" />
-        </div>
-
-        {/* Screen */}
-        <div className="pt-12 bg-white/6">
-          {/* ✅ Ratio estable: encaja perfecto en responsive */}
-          <div className="relative w-full aspect-[16/9]">
-            <Image
-              src={DASH_SRC}
-              alt="Dashboard Exemy"
-              fill
-              priority
-              sizes="(max-width: 768px) 94vw, 920px"
-              className="object-cover object-top"
-            />
-
-            {/* Shine arriba */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-transparent" />
-            {/* Fade abajo para integrarse al hero */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-slate-950/35" />
-          </div>
-        </div>
+    <div className="relative mx-auto w-full max-w-[1350px]">
+      <div className="relative aspect-[1100/638]">
+        <Image
+          src="/landing/mock-dashboard.png"
+          alt="Dashboard Exemy"
+          fill
+          priority
+          sizes="100vw"
+          className="object-contain drop-shadow-[0_60px_120px_rgba(0,0,0,0.6)]"
+        />
       </div>
-
-      {/* Glow / sombra suave exterior */}
-      <div className="mx-auto mt-5 h-9 w-[92%] rounded-full bg-black/40 blur-2xl" />
     </div>
   );
 }
 
 export function HeroEvaltia() {
   return (
-    <section className="mx-auto w-full max-w-7xl px-6 pt-8 pb-16">
-      {/* HERO TEXT */}
+    <section className="relative mx-auto w-full max-w-[1500px] px-6 pt-6 pb-16">
       <div className="text-center">
         <motion.div
           {...fadeUp}
-          transition={{ duration: 0.35 }}
-          className="
-            text-[12px] md:text-sm
-            font-semibold tracking-[0.18em]
-            uppercase
-            text-white/70
-          "
+          transition={{ duration: 0.4 }}
+          className="text-[12px] md:text-sm font-semibold tracking-[0.18em] uppercase text-white/70"
         >
           Bienvenido a Exemy
         </motion.div>
 
         <motion.h1
           {...fadeUp}
-          transition={{ duration: 0.38, delay: 0.03 }}
-          className="
-            mt-4 text-4xl md:text-6xl lg:text-7xl
-            font-extrabold tracking-tight text-white
-          "
+          transition={{ duration: 0.45, delay: 0.05 }}
+          className="mt-3 text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white"
         >
           El mejor camino para tu{" "}
           <span className="text-white/95">formación médica</span>
@@ -107,13 +51,8 @@ export function HeroEvaltia() {
 
         <motion.p
           {...fadeUp}
-          transition={{ duration: 0.35, delay: 0.06 }}
-          className="
-            mt-4 mx-auto max-w-3xl
-            text-base md:text-lg
-            text-white/80
-            leading-relaxed
-          "
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mt-3 mx-auto max-w-3xl text-base md:text-lg text-white/80 leading-relaxed"
         >
           Diseñada para integrarse a tu ritmo, tu contexto y tu forma de aprender
           medicina.
@@ -121,49 +60,37 @@ export function HeroEvaltia() {
 
         <motion.div
           {...fadeUp}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className="mt-7 flex flex-wrap justify-center gap-3"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mt-6 flex flex-wrap justify-center gap-4"
         >
           <Link
             href="/register"
-            className="
-              rounded-xl bg-white px-7 py-3
-              text-[#0b1a2b] font-semibold
-              hover:bg-white/90 transition
-              shadow-[0_10px_18px_rgba(0,0,0,0.25)]
-            "
+            className="rounded-xl bg-white px-8 py-3 text-[#0b1a2b] font-semibold hover:bg-white/90 transition shadow-[0_15px_25px_rgba(0,0,0,0.3)]"
           >
             Probar demo
           </Link>
 
           <Link
             href="/#como-funciona"
-            className="
-              rounded-xl
-              bg-[#1e2f42]/70 backdrop-blur-sm
-              px-7 py-3
-              text-white/95
-              hover:bg-[#1e2f42]/80 transition
-            "
+            className="rounded-xl bg-[#1e2f42]/70 backdrop-blur-sm px-8 py-3 text-white hover:bg-[#1e2f42]/80 transition"
           >
             Ver cómo funciona
           </Link>
         </motion.div>
       </div>
 
-      {/* DASHBOARD */}
+      {/* 👇 Subimos el mockup reduciendo margen superior */}
       <motion.div
         {...fadeUp}
-        transition={{ duration: 0.45, delay: 0.14 }}
-        className="mt-9"
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="mt-8"
       >
         <DashboardFrame />
       </motion.div>
 
-      {/* CÓMO FUNCIONA */}
-      <div id="como-funciona" className="scroll-mt-28 mt-12">
-        <motion.div {...fadeUp} transition={{ duration: 0.35 }}>
-          <div className={`rounded-3xl p-8 md:p-10 ${GLASS_CARD_STRONG}`}>
+      <div id="como-funciona" className="scroll-mt-28 mt-20">
+        <motion.div {...fadeUp} transition={{ duration: 0.4 }}>
+          <div className="rounded-3xl p-10 bg-[#1e2f42]/80 backdrop-blur-sm shadow-[0_40px_80px_rgba(0,0,0,0.35)]">
             <h2 className="text-2xl md:text-3xl font-bold text-white">
               Una plataforma pensada para el estudio real de la medicina
             </h2>
@@ -176,7 +103,7 @@ export function HeroEvaltia() {
           </div>
         </motion.div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-10 grid gap-6 md:grid-cols-3">
           {[
             {
               n: "01",
@@ -197,24 +124,24 @@ export function HeroEvaltia() {
             <motion.div
               key={idx}
               {...fadeUp}
-              transition={{ duration: 0.35, delay: 0.05 * idx }}
-              className={`rounded-2xl p-6 transition hover:bg-[#1e2f42]/80 ${GLASS_CARD}`}
+              transition={{ duration: 0.4, delay: 0.05 * idx }}
+              className="rounded-2xl p-6 bg-[#1e2f42]/70 backdrop-blur-sm shadow-[0_40px_80px_rgba(0,0,0,0.35)] transition hover:bg-[#1e2f42]/80"
             >
               <div className="text-xs text-white/60">{i.n}</div>
-              <h3 className="mt-2 text-lg font-semibold text-white">{i.t}</h3>
+              <h3 className="mt-2 text-lg font-semibold text-white">
+                {i.t}
+              </h3>
               <p className="mt-2 text-sm text-white/80">{i.d}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
-      {/* DIFERENCIADOR */}
-      <div className="mt-14">
+      <div className="mt-24">
         <Differentiator />
       </div>
 
-      {/* FAQ */}
-      <div className="mt-14">
+      <div className="mt-24">
         <FAQEvaltia />
       </div>
     </section>

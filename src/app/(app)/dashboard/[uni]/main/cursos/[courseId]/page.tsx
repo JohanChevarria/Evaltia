@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Triangle, ArrowLeft } from "lucide-react";
@@ -38,12 +38,13 @@ function normalizeIncludes(includes: any): string {
 export default function CursoDetallePage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-
-  // âœ… En client, usa useParams() (evita params Promise)
   const params = useParams<{ uni: string; courseId: string }>();
+  const searchParams = useSearchParams();
 
   const courseId = (params?.courseId ?? "").toString();
   const uni = (params?.uni ?? "").toString();
+
+  const initialName = (searchParams?.get("name") ?? "").toString().trim();
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -72,7 +73,6 @@ export default function CursoDetallePage() {
           return;
         }
 
-        // 1) Curso + 2) Topics en paralelo
         const courseQuery = supabase
           .from("courses")
           .select("id, name, description")
@@ -100,6 +100,7 @@ export default function CursoDetallePage() {
           setLoading(false);
           return;
         }
+
         if (cancelled) return;
 
         const topicList = (topicRows ?? []) as TopicRow[];
@@ -107,7 +108,6 @@ export default function CursoDetallePage() {
         setCourse(courseRow as CourseRow);
         setTopics(topicList);
 
-        // Æ’o. Progreso por tema solo con respuestas de repaso.
         const topicIds = topicList.map((t) => t.id).filter(Boolean);
         if (topicIds.length === 0) {
           setProgressByTopic({});
@@ -149,6 +149,7 @@ export default function CursoDetallePage() {
           const createdAtRaw = Date.parse((row as any)?.created_at ?? "");
           const createdAt = Number.isNaN(createdAtRaw) ? 0 : createdAtRaw;
           const prev = latestByQuestion.get(questionId);
+
           if (!prev || createdAt >= prev.createdAt) {
             latestByQuestion.set(questionId, {
               isCorrect: !!(row as any)?.is_correct,
@@ -185,7 +186,7 @@ export default function CursoDetallePage() {
     }
 
     if (!courseId) {
-      setErrorMsg("courseId invÃ¡lido.");
+      setErrorMsg("courseId inválido.");
       setLoading(false);
       return;
     }
@@ -199,6 +200,7 @@ export default function CursoDetallePage() {
 
   const handleStartReview = async (topic: TopicRow) => {
     if (reviewLoadingId) return;
+
     setReviewLoadingId(topic.id);
     setReviewErrors((prev) => {
       if (!prev[topic.id]) return prev;
@@ -224,13 +226,14 @@ export default function CursoDetallePage() {
     }
   };
 
+  const headerName = course?.name || initialName;
+  const headerDesc = course?.description;
+
   return (
     <main className="px-4 sm:px-6 lg:px-10 py-6">
       <section className="rounded-2xl bg-white/70 backdrop-blur border border-black/5 shadow-lg p-6 sm:p-7">
-        {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            {/* Icono regresar al lado del nombre */}
             <button
               type="button"
               onClick={() => router.push(`/dashboard/${uni}/main/cursos`)}
@@ -243,15 +246,21 @@ export default function CursoDetallePage() {
 
             <div>
               <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
-                {course?.name ?? "Curso"}
+                {headerName ? (
+                  headerName
+                ) : (
+                  <span className="inline-block h-7 w-56 rounded-lg bg-slate-900/10 animate-pulse" />
+                )}
               </h1>
-              <p className="text-sm text-slate-600 mt-1">
-                {course?.description ?? "Selecciona un tema para practicar."}
-              </p>
+
+              {headerDesc ? (
+                <p className="text-sm text-slate-600 mt-1">{headerDesc}</p>
+              ) : (
+                <p className="text-sm text-slate-600 mt-1">Selecciona un tema para practicar.</p>
+              )}
             </div>
           </div>
 
-          {/* Derecha: Crear examen + Volver */}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -270,7 +279,6 @@ export default function CursoDetallePage() {
           </div>
         </div>
 
-        {/* Modal crear examen */}
         <ExamBuilderModal
           courseId={courseId}
           uni={uni}
@@ -295,7 +303,7 @@ export default function CursoDetallePage() {
             <>
               {topics.length === 0 ? (
                 <div className="text-sm text-slate-700 bg-white/70 border border-black/10 rounded-xl p-3">
-                  Este curso aÃºn no tiene temas.
+                  Este curso aún no tiene temas.
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -308,12 +316,16 @@ export default function CursoDetallePage() {
                       incorrect: 0,
                       answered: 0,
                     };
+
                     const totalCount = progress.total;
                     const answeredCount = progress.answered;
+
                     const correctPct =
                       totalCount > 0 ? Math.round((progress.correct / totalCount) * 100) : 0;
+
                     const incorrectPct =
                       totalCount > 0 ? Math.round((progress.incorrect / totalCount) * 100) : 0;
+
                     const correctRate =
                       answeredCount > 0 ? Math.round((progress.correct / answeredCount) * 100) : 0;
 
@@ -335,12 +347,7 @@ export default function CursoDetallePage() {
                               </span>
                             </div>
 
-                            <div>
-                              <div className="font-semibold text-slate-900">{t.title}</div>
-                              <div className="text-xs text-slate-600 mt-0.5">
-                                Entrar a practicar
-                              </div>
-                            </div>
+                            <div className="font-semibold text-slate-900">{t.title}</div>
                           </div>
 
                           <div className="flex items-center gap-2">
@@ -406,5 +413,3 @@ export default function CursoDetallePage() {
     </main>
   );
 }
-
-

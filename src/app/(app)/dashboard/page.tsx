@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+// src/app/(app)/dashboard/page.tsx
 
 export default function DashboardRootPage() {
-  redirect("/dashboard/main");
+  return null;
 }

@@ -1,20 +1,17 @@
+// src/app/layout.tsx
 import "./globals.css";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Exemy",
   description: "Tu plataforma para estudiantes de medicina",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="text-[14px] leading-normal antialiased bg-black">
-        {children}
-      </body>
+      {/* Root limpio: NO background inline global */}
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }

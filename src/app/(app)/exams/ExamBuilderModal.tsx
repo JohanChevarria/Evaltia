@@ -19,10 +19,17 @@ type ExamBuilderModalProps = {
 };
 
 type UniRow = { id: string; code: string; name: string };
-type CourseRow = { id: string; name: string; university_id: string };
+type CourseRow = { id: string; name: string; university_id: string; exam_config?: any };
 type TopicRow = { id: string; title: string };
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const clampInt = (v: unknown, min: number, max: number, fallback: number) => {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(n)));
+};
 
 const normalizeTopicIds = (values: string[], availableTopics: TopicRow[]) => {
   if (!values.length) return [];
@@ -78,9 +85,13 @@ export default function ExamBuilderModal({
   const [practiceName, setPracticeName] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  // defaults robustos
-  const simQuestions = Math.max(1, Math.min(500, Number(simulacroQuestions ?? 40) || 40));
-  const simMinutes = Math.max(1, Math.min(500, Number(simulacroMinutes ?? 60) || 60));
+  // ✅ Fuente de verdad del simulacro (se puede inicializar por props, pero se actualiza desde DB)
+  const [simConfigQuestions, setSimConfigQuestions] = useState<number>(() =>
+    clampInt(simulacroQuestions, 1, 500, 40)
+  );
+  const [simConfigMinutes, setSimConfigMinutes] = useState<number>(() =>
+    clampInt(simulacroMinutes, 1, 500, 60)
+  );
 
   const uniCode = (uni ?? "").toString().trim().toUpperCase();
 
@@ -92,13 +103,17 @@ export default function ExamBuilderModal({
 
     setSelectedTopics([]);
 
+    // ✅ cada vez que abres, si vinieron props, sincroniza el estado base
+    setSimConfigQuestions(clampInt(simulacroQuestions, 1, 500, 40));
+    setSimConfigMinutes(clampInt(simulacroMinutes, 1, 500, 60));
+
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = prevOverflow;
     };
-  }, [open]);
+  }, [open, simulacroQuestions, simulacroMinutes]);
 
   // Si el modal recibe data precargada, la aplica al abrir (sin loading)
   useEffect(() => {
@@ -106,7 +121,9 @@ export default function ExamBuilderModal({
 
     if (preloadedCourseName) {
       setCourseName(preloadedCourseName);
-      setPracticeName((prev) => (prev.trim().length ? prev : `${preloadedCourseName} - Practica`));
+      setPracticeName((prev) =>
+        prev.trim().length ? prev : `${preloadedCourseName} - Practica`
+      );
     }
     if (preloadedTopics && preloadedTopics.length) {
       const normalized = normalizeTopicIds(preloadedTopics, topics);
@@ -120,15 +137,19 @@ export default function ExamBuilderModal({
 
     if (examType === "simulacro") {
       setTimed(true);
-      setTimeMinutes(simMinutes);
+      // ✅ usa la config real de simulacro (ya sea props o DB)
+      setTimeMinutes(simConfigMinutes);
     }
-  }, [examType, open, simMinutes]);
+  }, [examType, open, simConfigMinutes]);
 
   // Fallback: solo carga del backend si NO llego precargado
   useEffect(() => {
     if (!open) return;
 
-    const hasPreloaded = !!preloadedCourseName && !!(preloadedTopics && preloadedTopics.length);
+    const hasPreloaded =
+      !!preloadedCourseName && !!(preloadedTopics && preloadedTopics.length);
+    // OJO: aunque haya preloaded, igual podemos querer leer exam_config real (si quieres).
+    // Por ahora, respetamos tu lógica: si hay preloaded, no cargamos.
     if (hasPreloaded) return;
 
     let cancelled = false;
@@ -191,11 +212,25 @@ export default function ExamBuilderModal({
         const cName = (course as CourseRow).name ?? "Curso";
         setCourseName(cName);
         setTopics((topicRows ?? []) as TopicRow[]);
-        setPracticeName((prev) => (prev.trim().length ? prev : `${cName} - Practica`));
+        setPracticeName((prev) =>
+          prev.trim().length ? prev : `${cName} - Practica`
+        );
 
-        const cfg: any = (course as any)?.exam_config;
-        const minutes = cfg?.simulacro?.minutes;
-        if (typeof minutes === "number" && minutes > 0) setTimeMinutes(minutes);
+        // ✅ lee config real del curso y setea simulacro (minutes + questions)
+        const cfg: any = (course as any)?.exam_config ?? {};
+        const cfgMinutes = cfg?.simulacro?.minutes;
+        const cfgQuestions = cfg?.simulacro?.questions;
+
+        const nextSimMinutes = clampInt(cfgMinutes, 1, 500, 60);
+        const nextSimQuestions = clampInt(cfgQuestions, 1, 500, 40);
+
+        setSimConfigMinutes(nextSimMinutes);
+        setSimConfigQuestions(nextSimQuestions);
+
+        // si ya estabas viendo simulacro, sincroniza el input (aunque esté disabled)
+        if (examType === "simulacro") {
+          setTimeMinutes(nextSimMinutes);
+        }
 
         setLoading(false);
       } catch (e: any) {
@@ -209,14 +244,28 @@ export default function ExamBuilderModal({
     return () => {
       cancelled = true;
     };
-  }, [open, supabase, uniCode, courseId, preloadedCourseName, preloadedTopics]);
+  }, [
+    open,
+    supabase,
+    uniCode,
+    courseId,
+    preloadedCourseName,
+    preloadedTopics,
+    examType,
+  ]);
 
   if (!open || !mounted) return null;
 
   const isSimulacro = examType === "simulacro";
 
+  // ✅ valores finales robustos
+  const simQuestions = clampInt(simConfigQuestions, 1, 500, 40);
+  const simMinutes = clampInt(simConfigMinutes, 1, 500, 60);
+
   const toggleTopic = (topicId: string) => {
-    setSelectedTopics((prev) => (prev.includes(topicId) ? prev.filter((t) => t !== topicId) : [...prev, topicId]));
+    setSelectedTopics((prev) =>
+      prev.includes(topicId) ? prev.filter((t) => t !== topicId) : [...prev, topicId]
+    );
   };
 
   const handleQuestionPreset = (n: number) => {
@@ -236,7 +285,7 @@ export default function ExamBuilderModal({
     let value = Number(e.target.value);
     if (Number.isNaN(value)) value = 1;
     if (value < 1) value = 1;
-    if (value > 500) value = 500;
+    if (value > 120) value = 120;
     setTimeMinutes(value);
   };
 
@@ -244,7 +293,10 @@ export default function ExamBuilderModal({
     e.preventDefault();
     if (submitting) return;
 
-    const finalExamName = isSimulacro ? `Simulacro - ${courseName}` : practiceName.trim() || `${courseName} - Practica`;
+    const finalExamName = isSimulacro
+      ? `Simulacro - ${courseName}`
+      : practiceName.trim() || `${courseName} - Practica`;
+
     if (selectedTopics.length === 0) {
       setErrorMsg("Elige al menos un tema.");
       return;
@@ -260,10 +312,16 @@ export default function ExamBuilderModal({
         body: JSON.stringify({
           courseId,
           topicIds: selectedTopics,
-          mode: examType === "simulacro" ? "simulacro" : "practica",
+          mode: isSimulacro ? "simulacro" : "practica",
+          // ✅ simulacro usa config real
           questionCount: isSimulacro ? simQuestions : questionCount,
           timed: isSimulacro ? true : timed,
-          timeLimitMinutes: (isSimulacro ? true : timed) ? (isSimulacro ? simMinutes : timeMinutes) : null,
+          // ✅ simulacro usa config real
+          timeLimitMinutes: (isSimulacro ? true : timed)
+            ? isSimulacro
+              ? simMinutes
+              : timeMinutes
+            : null,
           name: finalExamName,
         }),
       });
@@ -308,18 +366,23 @@ export default function ExamBuilderModal({
       >
         <div className="flex items-start justify-between mb-4">
           <div className="w-full pr-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">Crear examen</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+              Crear examen
+            </h2>
 
             <div className="mt-2">
               <p className="text-sm text-slate-600">
-                Curso: <span className="font-medium text-slate-800">{courseName}</span>
+                Curso:{" "}
+                <span className="font-medium text-slate-800">{courseName}</span>
               </p>
             </div>
 
             <div className="mt-3">
               {!isSimulacro ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-600">Nombre de practica:</span>
+                  <span className="text-xs text-slate-600">
+                    Nombre de practica:
+                  </span>
                   <input
                     value={practiceName}
                     onChange={(e) => setPracticeName(e.target.value)}
@@ -329,7 +392,8 @@ export default function ExamBuilderModal({
                 </div>
               ) : (
                 <p className="text-xs text-slate-600">
-                  Nombre: <span className="font-medium text-slate-800">{`Simulacro - ${courseName}`}</span>
+                  Nombre:{" "}
+                  <span className="font-medium text-slate-800">{`Simulacro - ${courseName}`}</span>
                 </p>
               )}
             </div>
@@ -353,7 +417,9 @@ export default function ExamBuilderModal({
               </div>
             )}
             {errorMsg && (
-              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">{errorMsg}</div>
+              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
+                {errorMsg}
+              </div>
             )}
           </div>
         )}
@@ -370,7 +436,9 @@ export default function ExamBuilderModal({
                   type="button"
                   onClick={() => setExamType(type as any)}
                   className={`px-4 py-1.5 text-sm rounded-md transition ${
-                    examType === type ? "bg-indigo-600 text-white shadow" : "text-slate-700 hover:bg-slate-100"
+                    examType === type
+                      ? "bg-indigo-600 text-white shadow"
+                      : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   {type === "practica" ? "Practica" : "Simulacro"}
@@ -426,7 +494,9 @@ export default function ExamBuilderModal({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-800">Temas</h3>
-              <p className="text-xs text-slate-600">Seleccionados: {selectedTopics.length}</p>
+              <p className="text-xs text-slate-600">
+                Seleccionados: {selectedTopics.length}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
