@@ -1,4 +1,3 @@
-// File: /Users/jchevarria/Evaltia/src/app/(public)/public components/Differentiator.tsx
 "use client";
 
 import { motion, useInView } from "framer-motion";
@@ -21,7 +20,6 @@ export default function Differentiator() {
   return (
     <section id="diferencial" className="mt-16" ref={ref}>
       <div className="grid lg:grid-cols-2 gap-10 items-center">
-        {/* TEXTO */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}
@@ -52,7 +50,6 @@ export default function Differentiator() {
           </p>
         </motion.div>
 
-        {/* TABLA */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={isInView ? { opacity: 1, x: 0 } : {}}

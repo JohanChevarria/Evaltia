@@ -1,4 +1,3 @@
-// src/app/(auth)/register/page.tsx
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -50,8 +49,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // ✅ RUTA CORRECTA: (onboarding) NO aparece en URL
-      // Tu página vive en /university (NO /onboarding/university)
       const redirectTo = `${window.location.origin}/university`;
 
       const { error } = await supabase.auth.signUp({

@@ -53,7 +53,6 @@ export default function UpdatePasswordPage() {
 
       setSuccessMsg("Contraseña actualizada correctamente.");
 
-      // pequeña pausa para UX
       setTimeout(() => {
         router.replace("/dashboard/main");
         router.refresh();
@@ -68,7 +67,6 @@ export default function UpdatePasswordPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 py-16 text-white">
-      {/* Fondo Exemy */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -89,7 +87,6 @@ export default function UpdatePasswordPage() {
       />
 
       <div className="relative z-10 w-full max-w-md bg-white shadow-2xl rounded-2xl p-8 space-y-6 text-slate-900">
-        {/* Logo */}
         <div className="flex justify-center">
           <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center shadow">
             <Image

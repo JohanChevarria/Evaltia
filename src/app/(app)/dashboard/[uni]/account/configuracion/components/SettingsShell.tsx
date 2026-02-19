@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/SettingsShell.tsx
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -63,7 +62,6 @@ export default function SettingsShell({ initial }: Props) {
 
   return (
     <>
-      {/* Header Lovable-like */}
       <header
         className="sticky top-0 z-50 backdrop-blur-xl"
         style={{ backgroundColor: "rgba(255, 255, 255, 0.85)" }}
@@ -86,7 +84,6 @@ export default function SettingsShell({ initial }: Props) {
         </div>
       </header>
 
-      {/* Content Lovable-like width */}
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <ProfileSection
           value={state.profile}
@@ -117,7 +114,6 @@ export default function SettingsShell({ initial }: Props) {
 
         <FriendsSection />
 
-        {/* Toast */}
         {toast && (
           <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2">
             <div
@@ -134,7 +130,6 @@ export default function SettingsShell({ initial }: Props) {
         )}
       </main>
 
-      {/* SaveBar (idéntico a lovable: sticky bottom) */}
       <SaveBar visible={dirty} saving={isPending} onSave={onSave} onReset={onReset} />
     </>
   );

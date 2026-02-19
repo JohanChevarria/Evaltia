@@ -9,15 +9,15 @@ type Props = {
   question: ExamQuestion;
   options: ExamOption[];
   mode: ExamMode;
-  selectedLabel: string | null; // ✅ ahora esto será A|B|C|D|E (UI)
+  selectedLabel: string | null;
   locked: boolean;
   showFeedback: boolean;
   showExplanation: boolean;
   isAnswerCorrect: boolean;
-  striked: Set<string>; // ✅ ahora esto guardará A|B|C|D|E
+  striked: Set<string>;
   finished: boolean;
-  onSelect: (label: string) => void; // ✅ recibe A|B|C|D|E
-  onToggleStrike: (label: string) => void; // ✅ recibe A|B|C|D|E
+  onSelect: (label: string) => void;
+  onToggleStrike: (label: string) => void;
   note?: string;
   onSaveNote: (text: string) => Promise<void>;
   savingNote: boolean;
@@ -196,7 +196,6 @@ export function QuestionArea({
     }
   };
 
-  // ❌ simulacro no muestra explicación (por ahora)
   const canShowExplanation = mode !== "simulacro" && showExplanation;
   const isReview = mode === "repaso";
   const reviewIncorrect = isReview ? (reviewIncorrectLabels ?? EMPTY_REVIEW_SET) : EMPTY_REVIEW_SET;
@@ -208,7 +207,6 @@ export function QuestionArea({
     [question.matching_data]
   );
 
-  // ✅ 1) Fuerza letras A–E por ORDEN VISUAL (index)
   const uiOptions = useMemo(() => {
     return (options ?? []).slice(0, 5).map((opt, idx) => ({
       opt,
@@ -216,7 +214,6 @@ export function QuestionArea({
     }));
   }, [options]);
 
-  // ✅ 2) Estados usando selectedLabel UI (A–E), no opt.label real
   const optionStates = useMemo(() => {
     const sel = (selectedLabel ?? "").toUpperCase();
     const correctLabel = (reviewCorrect ?? "").toUpperCase();
@@ -251,7 +248,6 @@ export function QuestionArea({
 
   return (
     <div className="space-y-4">
-      {/* PREGUNTA */}
       <div className="rounded-2xl bg-white border border-slate-200 shadow-sm p-5">
         <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500 font-semibold ev-question-font">
           Pregunta
@@ -271,7 +267,6 @@ export function QuestionArea({
 
         {question.image_url && (
           <div className="mt-4 rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={question.image_url} alt="Imagen" className="w-full object-cover" />
           </div>
         )}
@@ -324,7 +319,6 @@ export function QuestionArea({
           </div>
         )}
 
-        {/* BOTONES */}
         <div className="mt-4 flex items-center gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -370,7 +364,6 @@ export function QuestionArea({
           </div>
         )}
 
-        {/* NOTAS */}
         {notesOpen && (
           <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 space-y-2">
             <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-800 ev-question-font">
@@ -411,22 +404,18 @@ export function QuestionArea({
         )}
       </div>
 
-      {/* OPCIONES */}
       <div className="space-y-2">
           {optionStates.map(
             ({ opt, uiLabel, isSelected, showCorrect, showIncorrect, showThisExplanation }, idx) => (
               <OptionItem
                 key={opt.id ?? `${question.id}-${idx}`}
-                // ✅ clonamos la opción, pero forzamos label UI (A–E) SOLO para mostrar
                 option={{ ...opt, label: uiLabel }}
                 isSelected={isSelected}
                 isDisabled={locked || finished}
                 showCorrect={showCorrect}
                 showIncorrect={showIncorrect}
                 showExplanation={showThisExplanation}
-                // ✅ strike ahora se guarda por letra UI (A–E)
                 striked={striked.has(uiLabel)}
-                // ✅ al seleccionar, mandamos A–E
                 onSelect={() => onSelect(uiLabel)}
                 onToggleStrike={() => onToggleStrike(uiLabel)}
               />

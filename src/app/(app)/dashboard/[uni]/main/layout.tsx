@@ -1,6 +1,3 @@
-// src/app/(app)/dashboard/[uni]/main/layout.tsx
-export const dynamic = "force-dynamic";
-
 import MainLayoutClient from "./MainLayoutClient";
 
 export default async function MainLayout({

@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/sections/FriendsSection.tsx
 export default function FriendsSection() {
   return (
     <section id="amigos" className="rounded-3xl bg-white p-6 shadow-sm">

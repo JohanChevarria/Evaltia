@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/sections/AccessibilitySection.tsx
 "use client";
 
 type Props = {

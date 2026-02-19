@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,11 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 
 type ExamBuilderModalProps = {
   courseId: string;
-  uni: string; // codigo universidad (ej: usmp)
+  uni: string;
   open: boolean;
   onClose: () => void;
 
-  // NUEVO (para abrir instantaneo sin backend)
   preloadedCourseName?: string;
   preloadedTopics?: string[];
   simulacroQuestions?: number;
@@ -85,7 +84,6 @@ export default function ExamBuilderModal({
   const [practiceName, setPracticeName] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  // ✅ Fuente de verdad del simulacro (se puede inicializar por props, pero se actualiza desde DB)
   const [simConfigQuestions, setSimConfigQuestions] = useState<number>(() =>
     clampInt(simulacroQuestions, 1, 500, 40)
   );
@@ -97,13 +95,11 @@ export default function ExamBuilderModal({
 
   useEffect(() => setMounted(true), []);
 
-  // Al abrir: resetea seleccion, bloquea scroll del body
   useEffect(() => {
     if (!open) return;
 
     setSelectedTopics([]);
 
-    // ✅ cada vez que abres, si vinieron props, sincroniza el estado base
     setSimConfigQuestions(clampInt(simulacroQuestions, 1, 500, 40));
     setSimConfigMinutes(clampInt(simulacroMinutes, 1, 500, 60));
 
@@ -115,7 +111,6 @@ export default function ExamBuilderModal({
     };
   }, [open, simulacroQuestions, simulacroMinutes]);
 
-  // Si el modal recibe data precargada, la aplica al abrir (sin loading)
   useEffect(() => {
     if (!open) return;
 
@@ -131,25 +126,20 @@ export default function ExamBuilderModal({
     }
   }, [open, preloadedCourseName, preloadedTopics, topics]);
 
-  // Simulacro: cronometrado ON + bloqueado + setea minutos del curso
   useEffect(() => {
     if (!open) return;
 
     if (examType === "simulacro") {
       setTimed(true);
-      // ✅ usa la config real de simulacro (ya sea props o DB)
       setTimeMinutes(simConfigMinutes);
     }
   }, [examType, open, simConfigMinutes]);
 
-  // Fallback: solo carga del backend si NO llego precargado
   useEffect(() => {
     if (!open) return;
 
     const hasPreloaded =
       !!preloadedCourseName && !!(preloadedTopics && preloadedTopics.length);
-    // OJO: aunque haya preloaded, igual podemos querer leer exam_config real (si quieres).
-    // Por ahora, respetamos tu lógica: si hay preloaded, no cargamos.
     if (hasPreloaded) return;
 
     let cancelled = false;
@@ -216,7 +206,6 @@ export default function ExamBuilderModal({
           prev.trim().length ? prev : `${cName} - Practica`
         );
 
-        // ✅ lee config real del curso y setea simulacro (minutes + questions)
         const cfg: any = (course as any)?.exam_config ?? {};
         const cfgMinutes = cfg?.simulacro?.minutes;
         const cfgQuestions = cfg?.simulacro?.questions;
@@ -227,7 +216,6 @@ export default function ExamBuilderModal({
         setSimConfigMinutes(nextSimMinutes);
         setSimConfigQuestions(nextSimQuestions);
 
-        // si ya estabas viendo simulacro, sincroniza el input (aunque esté disabled)
         if (examType === "simulacro") {
           setTimeMinutes(nextSimMinutes);
         }
@@ -258,7 +246,6 @@ export default function ExamBuilderModal({
 
   const isSimulacro = examType === "simulacro";
 
-  // ✅ valores finales robustos
   const simQuestions = clampInt(simConfigQuestions, 1, 500, 40);
   const simMinutes = clampInt(simConfigMinutes, 1, 500, 60);
 
@@ -313,10 +300,8 @@ export default function ExamBuilderModal({
           courseId,
           topicIds: selectedTopics,
           mode: isSimulacro ? "simulacro" : "practica",
-          // ✅ simulacro usa config real
           questionCount: isSimulacro ? simQuestions : questionCount,
           timed: isSimulacro ? true : timed,
-          // ✅ simulacro usa config real
           timeLimitMinutes: (isSimulacro ? true : timed)
             ? isSimulacro
               ? simMinutes
@@ -425,7 +410,6 @@ export default function ExamBuilderModal({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Tipo */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-slate-800">Tipo de examen</h3>
 
@@ -447,7 +431,6 @@ export default function ExamBuilderModal({
             </div>
           </div>
 
-          {/* Cronometrado */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-800">Cronometrado</h3>
@@ -490,7 +473,6 @@ export default function ExamBuilderModal({
             )}
           </div>
 
-          {/* Temas */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-slate-800">Temas</h3>
@@ -521,7 +503,6 @@ export default function ExamBuilderModal({
             </div>
           </div>
 
-          {/* Preguntas */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-slate-800">Numero de preguntas</h3>
 

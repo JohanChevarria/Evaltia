@@ -40,10 +40,18 @@ function cycleAccent(cycle: number) {
 
 export default async function DashboardCursosPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ uni: string }>;
+  searchParams: Promise<{ newPractice?: string }>;
 }) {
   const { uni } = await params;
+  const query = await searchParams;
+  const openPracticeCreator = (query?.newPractice ?? "").toString() === "1";
+  const buildCourseHref = (courseId: string) =>
+    openPracticeCreator
+      ? `/dashboard/${uni}/main/cursos/${courseId}?newPractice=1`
+      : `/dashboard/${uni}/main/cursos/${courseId}`;
 
   const supabase = await createClient();
 
@@ -116,7 +124,7 @@ export default async function DashboardCursosPage({
                       {items.map((c) => (
                         <Link
                           key={c.id}
-                          href={`/dashboard/${uni}/main/cursos/${c.id}`}
+                          href={buildCourseHref(c.id)}
                           className={[
                             "group relative rounded-2xl border border-black/5 bg-white/78 backdrop-blur",
                             "px-5 py-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)]",
@@ -157,7 +165,7 @@ export default async function DashboardCursosPage({
                     {withoutCycle.map((c) => (
                       <Link
                         key={c.id}
-                        href={`/dashboard/${uni}/main/cursos/${c.id}`}
+                        href={buildCourseHref(c.id)}
                         className="group relative rounded-2xl border border-black/5 bg-white/78 backdrop-blur px-5 py-5 shadow-[0_10px_30px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(0,0,0,0.14)] focus:outline-none focus:ring-2 focus:ring-sky-300/60"
                         prefetch
                       >

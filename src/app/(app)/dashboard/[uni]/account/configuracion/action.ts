@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/action.ts
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -21,7 +20,6 @@ export async function saveSettings(payload: SettingsSavePayload) {
     return { ok: false, error: "No autorizado" };
   }
 
-  // ✅ Ajusta nombres de tablas/columnas a tu schema real si difiere
   const profileUpdate = supabase
     .from("profiles")
     .update({

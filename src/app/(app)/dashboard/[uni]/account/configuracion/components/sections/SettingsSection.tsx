@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/SettingsSection.tsx
 "use client";
 
 import type { ReactNode } from "react";

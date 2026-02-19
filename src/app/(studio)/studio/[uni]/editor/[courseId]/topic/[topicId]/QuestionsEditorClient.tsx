@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client";
 
 import { Pin, Trash2, MoveRight } from "lucide-react";
 
-/** ✅ FIX IMPORTS: tu path real está en src/app/components/studio/... */
 import FeedbackButton, {
   type FeedbackPayload,
 } from "@/app/components/studio/FeedbackButton";
@@ -49,7 +48,6 @@ type QuestionRow = {
   question_type?: string | null;
   matching_data?: MatchingData | Record<string, unknown> | null;
 
-  /** ✅ NUEVO: clave canónica del matching (p.ej. [0,1,2,3]) */
   matching_key?: number[] | null;
 
   concept_id?: string | null;
@@ -79,7 +77,6 @@ const BASE_LABELS = ["A", "B", "C", "D", "E"];
 const MATCHING_LEFT_LABELS = ["A", "B", "C", "D"];
 const MATCHING_RIGHT_LABELS = ["I", "II", "III", "IV"];
 
-/** ✅ matching_key default: índice a índice */
 const DEFAULT_MATCHING_KEY = [0, 1, 2, 3];
 
 function nextLabel(existing: string[]) {
@@ -111,7 +108,7 @@ function difficultyLabel(d: Difficulty) {
 function difficultyRank(d: Difficulty) {
   if (d === "easy") return 0;
   if (d === "medium") return 1;
-  return 2; // hard
+  return 2;
 }
 
 function normalizeQuestionType(raw: unknown): QuestionType {
@@ -183,27 +180,20 @@ export default function QuestionsEditorClient({
   questions,
   options,
 }: Props) {
-  /** ✅ no recrear supabase en cada render */
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // -----------------------------
-  // Persistencia de concepto en URL
-  // -----------------------------
   const conceptFromUrl = searchParams.get("concept");
 
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(
     conceptFromUrl ?? concepts?.[0]?.id ?? null
   );
 
-  // ✅ Override local de títulos (para que Renombrar se vea instantáneo
-  // y NO cambie el orden del selector aunque el server ordene por title)
   const [conceptTitleOverride, setConceptTitleOverride] = useState<
     Record<string, string>
   >({});
 
-  // ✅ Mantener un orden estable por order_number (si existe), luego fallback por “posición”
   const conceptsOrdered = useMemo(() => {
     const list = [...(concepts ?? [])];
     list.sort((a, b) => {
@@ -219,7 +209,6 @@ export default function QuestionsEditorClient({
     }));
   }, [concepts, conceptTitleOverride]);
 
-  // Mantener selección estable cuando cambien concepts/URL (por router.refresh)
   useEffect(() => {
     const all = conceptsOrdered ?? [];
     if (all.length === 0) {
@@ -227,18 +216,15 @@ export default function QuestionsEditorClient({
       return;
     }
 
-    // 1) si URL tiene concept válido => úsalo
     if (conceptFromUrl && all.some((c) => c.id === conceptFromUrl)) {
       setSelectedConceptId(conceptFromUrl);
       return;
     }
 
-    // 2) si el seleccionado actual sigue existiendo => mantenlo
     if (selectedConceptId && all.some((c) => c.id === selectedConceptId)) {
       return;
     }
 
-    // 3) fallback: primer concepto
     setSelectedConceptId(all[0].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conceptFromUrl, conceptsOrdered]);
@@ -249,16 +235,11 @@ export default function QuestionsEditorClient({
     const sp = new URLSearchParams(searchParams.toString());
     sp.set("concept", id);
 
-    // replace para no ensuciar el historial
     router.replace(`?${sp.toString()}`, { scroll: false });
   }
 
-  // -----------------------------
-  // Estado general
-  // -----------------------------
   const [busy, setBusy] = useState(false);
 
-  // ✅ Dropdown de dificultad (1 abierto a la vez)
   const [difficultyOpenId, setDifficultyOpenId] = useState<string | null>(null);
   const [questionTypeOpenId, setQuestionTypeOpenId] = useState<string | null>(
     null
@@ -356,7 +337,6 @@ export default function QuestionsEditorClient({
           right: normalized.right,
         };
 
-        /** ✅ asegurar matching_key por defecto */
         payload.matching_key = DEFAULT_MATCHING_KEY;
       }
 
@@ -390,16 +370,13 @@ export default function QuestionsEditorClient({
     }
   }
 
-  // Edición
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(
     null
   );
   const [draft, setDraft] = useState<Draft | null>(null);
 
-  // “post-create” auto edit
   const [pendingEditId, setPendingEditId] = useState<string | null>(null);
 
-  // Feedback
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackPayload, setFeedbackPayload] =
     useState<FeedbackPayload | null>(null);
@@ -409,11 +386,9 @@ export default function QuestionsEditorClient({
     setFeedbackOpen(true);
   }
 
-  // Selección bulk
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Pinned (localStorage por topic)
   const pinKey = `evaltia:pins:${topicId}`;
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
 
@@ -455,7 +430,6 @@ export default function QuestionsEditorClient({
     return map;
   }, [options]);
 
-  // ✅ filtro por concepto estable
   const filteredQuestions = useMemo<QuestionRow[]>(() => {
     if (!selectedConceptId) return [];
     const selected = String(selectedConceptId);
@@ -487,14 +461,10 @@ export default function QuestionsEditorClient({
     return list;
   }, [filteredQuestions, pinnedIds]);
 
-  // ✅ refresh sin recargar toda la página (NO pierde estado)
   async function refresh() {
     router.refresh();
   }
 
-  // -----------------------------
-  // CONCEPTOS
-  // -----------------------------
   async function addConcept() {
     const title = prompt(
       "Nombre del nuevo concepto (ej: Clasificación de epitelios):"
@@ -535,7 +505,6 @@ export default function QuestionsEditorClient({
     }
   }
 
-  /** ✅ Renombrar funcional + no reordena visualmente */
   async function renameConcept() {
     if (!selectedConcept) {
       pushConceptStatus("error", "Primero elige un concepto.");
@@ -571,13 +540,11 @@ export default function QuestionsEditorClient({
         return;
       }
 
-      // ✅ update inmediato del UI (sin depender de refresh)
       setConceptTitleOverride((prev) => ({
         ...prev,
         [selectedConcept.id]: cleaned,
       }));
 
-      // ✅ refresca data server (por consistencia), pero el orden visual queda por order_number
       pushConceptStatus("success", "Concepto renombrado.");
       await refresh();
     } finally {
@@ -620,9 +587,6 @@ export default function QuestionsEditorClient({
     }
   }
 
-  // -----------------------------
-  // PREGUNTAS
-  // -----------------------------
   async function addQuestion() {
     if (!selectedConceptId) return alert("Primero crea o elige un concepto.");
 
@@ -668,7 +632,6 @@ export default function QuestionsEditorClient({
     }
   }
 
-  // ✅ startEdit robusto: lee options reales, crea A–E si faltan
   async function startEdit(q: QuestionRow) {
     setBusy(true);
     try {
@@ -742,7 +705,6 @@ export default function QuestionsEditorClient({
     }
   }
 
-  // ✅ Abrir edición automáticamente tras crear una pregunta
   useEffect(() => {
     if (!pendingEditId) return;
 
@@ -830,11 +792,9 @@ export default function QuestionsEditorClient({
     }
   }
 
-  /** ✅ borrar opción (backend + draft) */
   async function deleteOption(optionId: string, isMatchingCurrent: boolean) {
     if (!draft || isMatchingCurrent) return;
 
-    // no dejar menos de 5
     if ((draft.options?.length ?? 0) <= 5) {
       alert("No puedes bajar de 5 opciones.");
       return;
@@ -859,7 +819,6 @@ export default function QuestionsEditorClient({
         return;
       }
 
-      // quitar del draft
       setDraft((d) => {
         if (!d) return d;
         return {
@@ -910,7 +869,6 @@ export default function QuestionsEditorClient({
           right: normalizeMatchingSide(draft.matchingRight ?? [], true),
         };
 
-        /** ✅ asegurar matching_key */
         payload.matching_key = DEFAULT_MATCHING_KEY;
       }
 
@@ -949,9 +907,6 @@ export default function QuestionsEditorClient({
     }
   }
 
-  // -----------------------------
-  // SELECCIÓN (BULK)
-  // -----------------------------
   function toggleSelected(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -1009,9 +964,6 @@ export default function QuestionsEditorClient({
     setSelectMode(false);
   }
 
-  // -----------------------------
-  // ✅ Modal "Mover" pro
-  // -----------------------------
   const [moveOpen, setMoveOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [moveTargetConceptId, setMoveTargetConceptId] = useState<string>("");
@@ -1267,7 +1219,6 @@ export default function QuestionsEditorClient({
 
                     return (
                       <div key={q.id}>
-                        {/* ✅ Divisor por dificultad */}
                         {showDivider ? (
                           <div
                             className={`px-4 py-2 border-y ${meta.wrap} flex items-center justify-between`}
@@ -1402,9 +1353,7 @@ export default function QuestionsEditorClient({
                                   ) : null}
                                 </div>
 
-                                {/* ✅ Área “Nivel” + “Tipo de pregunta” */}
                                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {/* NIVEL */}
                                   <div
                                     className="rounded-xl border border-slate-200 bg-white overflow-hidden"
                                     data-difficulty-root={String(q.id)}
@@ -1467,7 +1416,6 @@ export default function QuestionsEditorClient({
                                     ) : null}
                                   </div>
 
-                                  {/* TIPO DE PREGUNTA */}
                                   <div
                                     className="rounded-xl border border-slate-200 bg-white overflow-hidden"
                                     data-question-type-root={String(q.id)}
@@ -1670,7 +1618,6 @@ export default function QuestionsEditorClient({
                                               isCorrectView ? "bg-green-50" : "bg-white"
                                             }`}
                                           >
-                                            {/* ✅ Columna letra + icono delete (solo en edición) */}
                                             <div className="w-8 flex flex-col items-center pt-[2px]">
                                               <span className="font-bold text-slate-600 leading-none">
                                                 {o.label}.
@@ -1784,7 +1731,6 @@ export default function QuestionsEditorClient({
           </section>
         </div>
 
-        {/* ✅ Sticky bar inferior */}
         <div className="sticky bottom-0 z-10">
           <div className="mx-auto max-w-[1400px]">
             <div className="bg-white/95 backdrop-blur border border-slate-200 rounded-2xl shadow-sm px-4 py-3 flex items-center justify-between">
@@ -1806,7 +1752,6 @@ export default function QuestionsEditorClient({
         </div>
       </div>
 
-      {/* ✅ MODAL MOVER */}
       {mounted && moveOpen
         ? createPortal(
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">

@@ -10,7 +10,6 @@ type DayData = {
 
 type CalendarData = Record<string, DayData>;
 
-// MOCK TEMPORAL: luego vendrá del backend
 const MOCK_CALENDAR_DATA: CalendarData = {
   "2025-11-02": { questions: 40, correctPercent: 65 },
   "2025-11-05": { questions: 20, correctPercent: 80 },
@@ -33,15 +32,14 @@ const WEEK_DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 function getDaysMatrix(year: number, monthIndex: number) {
   const firstDay = new Date(year, monthIndex, 1);
 
-  let startWeekDay = firstDay.getDay(); // 0-6
-  if (startWeekDay === 0) startWeekDay = 7; // domingo -> 7
+  let startWeekDay = firstDay.getDay();
+  if (startWeekDay === 0) startWeekDay = 7;
 
   const matrix: { date: Date; isCurrentMonth: boolean }[][] = [];
 
   const startDate = new Date(year, monthIndex, 1 - (startWeekDay - 1));
   const current = new Date(startDate);
 
-  // 6 filas de 7 días para mantener estructura
   for (let week = 0; week < 6; week++) {
     const row: { date: Date; isCurrentMonth: boolean }[] = [];
     for (let day = 0; day < 7; day++) {
@@ -85,7 +83,7 @@ const MONTH_NAMES = [
 export default function CalendarPage() {
   const today = new Date();
   const todayKey = formatKey(today);
-  const todayStr = today.toISOString().slice(0, 10); // para min en <input type="date" />
+  const todayStr = today.toISOString().slice(0, 10);
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonthIndex, setCurrentMonthIndex] = useState(
@@ -128,8 +126,6 @@ export default function CalendarPage() {
   };
 
   const handleSaveReminder = () => {
-    // Aquí luego iría la llamada al backend (Supabase / API).
-    // Por ahora solo simulamos.
     console.log("Nuevo recordatorio:", {
       date: reminderDate,
       title: reminderTitle,
@@ -142,7 +138,6 @@ export default function CalendarPage() {
   return (
     <main className="pb-6">
       <section className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm p-4 sm:p-5 text-slate-900 w-full">
-        {/* Header + controles + botón recordatorio */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -178,7 +173,6 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Leyenda compacta */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-3">
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-indigo-600" />
@@ -198,9 +192,7 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Grid mensual – ajustado para evitar scroll */}
         <div className="grid grid-cols-7 gap-2 sm:gap-3">
-          {/* Encabezado de semana */}
           {WEEK_DAYS.map((day) => (
             <div
               key={day}
@@ -210,7 +202,6 @@ export default function CalendarPage() {
             </div>
           ))}
 
-          {/* Celdas de días */}
           {matrix.map((week, weekIndex) =>
             week.map(({ date, isCurrentMonth }, dayIndex) => {
               const key = formatKey(date);
@@ -231,7 +222,6 @@ export default function CalendarPage() {
                   key={`${weekIndex}-${dayIndex}`}
                   className={`min-h-[76px] sm:min-h-[96px] rounded-xl border border-slate-100 px-2 py-1 flex flex-col ${bgClass}`}
                 >
-                  {/* número del día */}
                   <div className="flex items-center justify-between mb-1">
                     <span
                       className={`text-xs font-semibold ${
@@ -251,7 +241,6 @@ export default function CalendarPage() {
                     )}
                   </div>
 
-                  {/* contenido */}
                   {isCurrentMonth ? (
                     <div className="flex-1 flex flex-col justify-between gap-1">
                       {hasStudy && (
@@ -319,7 +308,6 @@ export default function CalendarPage() {
         </div>
       </section>
 
-      {/* Modal para crear recordatorio */}
       {isModalOpen && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/30">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 space-y-4">

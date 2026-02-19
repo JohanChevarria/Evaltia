@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/sections/PrivacySection.tsx
 "use client";
 
 import type { SettingsInitialData } from "../types";

@@ -1,8 +1,7 @@
-// src/lib/getCourses.ts
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCourses() {
-  const supabase = await createClient(); // ✅ OJO: createClient() devuelve Promise en tu proyecto
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("courses")

@@ -1,9 +1,8 @@
-// src/components/courses/data.ts
 export type Course = {
   id: string;
   slug: string;
   name: string;
-  progress: number; // 0–100 (mock por ahora)
+  progress: number;
 };
 
 export const COURSES: Course[] = [

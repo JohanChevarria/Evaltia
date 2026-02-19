@@ -1,4 +1,3 @@
-// File: /Users/jchevarria/Evaltia/src/app/(public)/public components/FAQEvaltia.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -9,7 +8,6 @@ type FAQItem = {
 };
 
 export default function FAQEvaltia() {
-  // ✅ No abrir nada por defecto
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const items: FAQItem[] = useMemo(

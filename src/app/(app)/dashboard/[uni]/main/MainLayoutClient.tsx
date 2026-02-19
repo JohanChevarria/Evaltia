@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/main/MainLayoutClient.tsx
 "use client";
 
 import DashboardNavbar from "@/app/(app)/nav/DashboardNavbar";
@@ -12,7 +11,6 @@ export default function MainLayoutClient({
 }) {
   return (
     <div className="relative min-h-screen w-full text-white">
-      {/* Fondo */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -27,10 +25,8 @@ export default function MainLayoutClient({
       />
 
       <section className="relative z-10 px-6 pt-7 pb-10 max-w-7xl mx-auto">
-        {/* ✅ Navbar real reutilizable */}
         <DashboardNavbar uni={uni} />
 
-        {/* Contenido */}
         <div className="mt-10">{children}</div>
       </section>
     </div>

@@ -1,4 +1,3 @@
-// src/app/(auth)/login/page.tsx
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
@@ -61,7 +60,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // 1) Login
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -80,7 +78,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 2) Leer profile (SOLO columnas reales)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("id, role, university_id, onboarding_completed, university_onboarding_completed")
@@ -102,13 +99,10 @@ export default function LoginPage() {
         return;
       }
 
-      // 3) Admin se decide por role
       const isAdmin = safeLower(profile.role) === "admin";
 
       const hasUniversityId = !!profile.university_id;
 
-      // ✅ ADMIN BYPASS: no exigir onboarding flags
-      // Pero sí necesita university_id para resolver /studio/[uni]
       if (isAdmin) {
         if (!hasUniversityId) {
           setErrorMsg(
@@ -118,7 +112,6 @@ export default function LoginPage() {
           return;
         }
 
-        // resolver uni code y mandar a studio
         const { data: uniRow, error: uniErr } = await supabase
           .from("universities")
           .select("code")
@@ -137,7 +130,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 4) STUDENT: exigir onboarding de university + university_id
       const uniOnboardingDone = profile.university_onboarding_completed === true;
 
       if (!uniOnboardingDone || !hasUniversityId) {
@@ -145,7 +137,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 5) Resolver uni code y mandar a dashboard
       const { data: uniRow, error: uniErr } = await supabase
         .from("universities")
         .select("code")

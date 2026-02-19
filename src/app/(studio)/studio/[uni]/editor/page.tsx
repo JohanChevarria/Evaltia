@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
@@ -16,12 +16,10 @@ export default async function EditorCoursesPage({ params }: PageProps) {
   const supabase = await createClient();
   const { uni } = await params;
 
-  // 1) SesiÃ³n
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
   if (!user) redirect("/login");
 
-  // 2) Perfil y rol
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, role, university_id")
@@ -35,7 +33,6 @@ export default async function EditorCoursesPage({ params }: PageProps) {
     ? await getStudioPathForUniversityId(supabase, profile.university_id)
     : "/dashboard/main";
 
-  // 3) Universidad por cÃ³digo URL (usmp/upc/...)
   const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
@@ -46,12 +43,10 @@ export default async function EditorCoursesPage({ params }: PageProps) {
 
   if (!uniRow) redirect(fallbackPath);
 
-  // 4) Bloqueo: admin solo puede ver SU universidad
   if (!profile.university_id || profile.university_id !== uniRow.id) {
     redirect(fallbackPath);
   }
 
-  // 5) Cursos de ESA universidad
   const { data: courses, error: coursesError } = await supabase
     .from("courses")
     .select("id, name, description")
@@ -59,13 +54,11 @@ export default async function EditorCoursesPage({ params }: PageProps) {
     .order("name", { ascending: true });
 
   if (coursesError) {
-    // si quieres, puedes mostrar un mensaje en UI, pero por ahora redirijo simple:
     redirect(fallbackPath);
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Editor</h1>
@@ -86,10 +79,8 @@ export default async function EditorCoursesPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Realtime listener (CMS) */}
       <EditorClient universityId={uniRow.id} />
 
-      {/* Cursos */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
         <h2 className="font-semibold">1) Cursos</h2>
 
@@ -102,7 +93,7 @@ export default async function EditorCoursesPage({ params }: PageProps) {
             {(courses as CourseRow[]).map((c) => (
               <Link
                 key={c.id}
-                href={`/studio/${uniCode}/editor/${c.id}`}   // âœ… ahora es ruta clara
+                href={`/studio/${uniCode}/editor/${c.id}`}
                 className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 p-4 transition"
               >
                 <p className="font-semibold text-slate-900">{c.name}</p>

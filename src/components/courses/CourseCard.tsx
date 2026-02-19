@@ -33,7 +33,6 @@ function IconChip({ slug }: { slug: string }) {
 
 type Props = { course: Course };
 
-// ✅ Export por defecto (evita el error “got: object”)
 export default function CourseCard({ course }: Props) {
   return (
     <div className="rounded-2xl bg-white/70 backdrop-blur border border-white/20 shadow-sm hover:shadow transition-all hover:-translate-y-0.5">
@@ -51,7 +50,6 @@ export default function CourseCard({ course }: Props) {
           </Link>
         </div>
 
-        {/* Progreso */}
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-slate-700 mb-1">
             <span>Progreso</span>
@@ -65,7 +63,6 @@ export default function CourseCard({ course }: Props) {
           </div>
         </div>
 
-        {/* CTA móvil */}
         <Link
           href={`/dashboard/main/cursos/${course.slug}`}
           className={`mt-4 sm:hidden inline-flex w-full items-center justify-center gap-1 rounded-xl px-3 py-2 ${BRAND_BTN} shadow`}

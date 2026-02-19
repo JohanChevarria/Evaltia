@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import ResendButton from "./ResendButton";
@@ -12,14 +12,12 @@ type CheckEmailPageProps = {
 export default async function CheckEmailPage({ searchParams }: CheckEmailPageProps) {
   const { email } = await searchParams;
 
-  // ðŸš« Si no hay email en la URL, redirigimos a register
   if (!email) {
     redirect("/register");
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden px-4 text-white">
-      {/* Fondo igual al login/register */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -39,9 +37,7 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
         }}
       />
 
-      {/* Tarjeta */}
       <div className="relative z-10 w-full max-w-md bg-white shadow-2xl rounded-2xl p-8 space-y-6 text-slate-900">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center shadow">
             <Image
@@ -64,7 +60,6 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
           </p>
         </div>
 
-        {/* Botones */}
         <div className="pt-2 flex flex-col items-center gap-3">
           <Link
             href="/login"
@@ -73,7 +68,6 @@ export default async function CheckEmailPage({ searchParams }: CheckEmailPagePro
             Ya confirmÃ© â†’ Iniciar sesiÃ³n
           </Link>
 
-          {/* Resend, estilo â€œsecundarioâ€ y limpio */}
           <ResendButton email={email} />
 
           <p className="text-xs text-slate-500 text-center">

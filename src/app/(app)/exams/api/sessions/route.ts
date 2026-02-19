@@ -14,7 +14,6 @@ type CreateBody = {
   timeLimitMinutes?: number | null;
   name?: string;
 
-  // legacy / compat
   course_id?: string;
   topic_id?: string;
   topic_name?: string;
@@ -46,9 +45,6 @@ export async function POST(req: Request) {
 
     const isReview = mode === "repaso" && typeof body.topic_id === "string";
 
-    // =========================
-    // REPASO
-    // =========================
     if (isReview) {
       const topicId = (body.topic_id ?? "").toString().trim();
       if (!topicId) return NextResponse.json({ error: "topic_id requerido" }, { status: 400 });
@@ -73,7 +69,6 @@ export async function POST(req: Request) {
       const finalCourseId = (topicRow as any).course_id ?? courseId;
       if (!finalCourseId) return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
 
-      // ƒo. Si hay un repaso abierto (no finalizado) de este mismo topic, se reanuda.
       const { data: existingReview } = await supabase
         .from("exam_sessions")
         .select("id, question_count, finished_at, status")
@@ -93,7 +88,6 @@ export async function POST(req: Request) {
         });
       }
 
-      // Diagnóstico rápido de lectura questions (RLS / mismatch)
       const diag = await diagnoseQuestionsRead({
         supabase,
         courseId: finalCourseId,
@@ -165,9 +159,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ sessionId, questionCount: finalCount });
     }
 
-    // =========================
-    // PRACTICA / SIMULACRO
-    // =========================
     const courseId = (body.courseId ?? body.course_id ?? "").toString().trim();
     const topicIds = Array.isArray(body.topicIds) ? body.topicIds.filter(Boolean) : [];
 
@@ -193,7 +184,6 @@ export async function POST(req: Request) {
     if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 });
     const universityId = (profile as any)?.university_id ?? null;
 
-    // ✅ topics válidos del curso
     const { data: topicRows, error: topicsErr } = await supabase
       .from("topics")
       .select("id")
@@ -208,7 +198,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No hay temas válidos para este curso." }, { status: 400 });
     }
 
-    // ✅ Diagnóstico ANTES de seleccionar (para detectar RLS o mismatch de uni)
     const diag = await diagnoseQuestionsRead({
       supabase,
       courseId,
@@ -239,6 +228,25 @@ export async function POST(req: Request) {
     const orderedIds = shuffleWithSeed(selected.map((q) => q.id), sessionId).slice(0, requestedCount);
     const finalQuestionIds = orderedIds.length ? orderedIds : selected.map((q) => q.id);
     const finalCount = Math.min(requestedCount, finalQuestionIds.length);
+
+    if (mode === "practica") {
+      const nowIso = new Date().toISOString();
+      const { error: closePreviousError } = await supabase
+        .from("exam_sessions")
+        .update({
+          status: "finished",
+          finished_at: nowIso,
+          paused_at: null,
+        })
+        .eq("user_id", user.id)
+        .eq("mode", "practica")
+        .in("status", ["in_progress", "paused"])
+        .is("finished_at", null);
+
+      if (closePreviousError) {
+        return NextResponse.json({ error: closePreviousError.message }, { status: 500 });
+      }
+    }
 
     const { error: sessionError } = await supabase.from("exam_sessions").insert({
       id: sessionId,
@@ -306,19 +314,18 @@ async function diagnoseQuestionsRead(opts: {
     };
   };
 
-  // Nota: NO usamos head:true para evitar count null raro. Solo limit 3.
   const base = supabase.from("questions").select("id", { count: "exact" }).in("topic_id", topicIds);
 
   const q1 = base.eq("course_id", courseId).limit(3);
   if (universityId) q1.eq("university_id", universityId);
 
-  const q2 = base.eq("course_id", courseId).limit(3); // sin university_id
+  const q2 = base.eq("course_id", courseId).limit(3);
 
   const q3 = supabase
     .from("questions")
     .select("id", { count: "exact" })
     .in("topic_id", topicIds)
-    .limit(3); // solo topic
+    .limit(3);
 
   return {
     courseId,

@@ -1,4 +1,3 @@
-// File: /Users/jchevarria/Evaltia/src/app/(public)/page.tsx
 "use client";
 
 import Image from "next/image";
@@ -17,9 +16,8 @@ export default function Home() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ✅ Mantiene tu paleta. Solo añade un shift MUY sutil (1–3%) con mouse/scroll.
   const bgStyle = useMemo(() => {
-    const s = Math.min(scroll / 900, 1); // 0..1
+    const s = Math.min(scroll / 900, 1);
     const x = pos.x + s * 1.8;
     const y = pos.y + s * 1.2;
 
@@ -51,14 +49,11 @@ export default function Home() {
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
-        // suaviza
         setPos((p) => ({ x: p.x * 0.88 + x * 0.12, y: p.y * 0.88 + y * 0.12 }));
       }}
     >
-      {/* Fondo tipo “moonlit fog” */}
       <div className="absolute inset-0 z-0" style={bgStyle} />
 
-      {/* Grain MUY leve (premium) */}
       <div
         className="absolute inset-0 z-0 opacity-[0.06] pointer-events-none"
         style={{
@@ -67,7 +62,6 @@ export default function Home() {
         }}
       />
 
-      {/* HEADER (premium claro, no dark) */}
       <header className="relative z-10 w-full px-6 pt-4 sticky top-0">
         <div className="mx-auto max-w-7xl">
           <div className="rounded-2xl border border-white/18 bg-white/10 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.14)]">
@@ -113,17 +107,13 @@ export default function Home() {
         </div>
       </header>
 
-      {/* LANDING */}
       <div className="relative z-10">
         <HeroEvaltia />
       </div>
 
-      {/* FOOTER (mejor tipografía/jerarquía + grid correcto) */}
-      {/* FOOTER PREMIUM */}
 <footer className="relative z-10 bg-[#1e2f42]/85 backdrop-blur-md text-gray-200 pt-20 pb-10 px-6 border-t border-white/10">
   <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 text-sm">
 
-    {/* Marca */}
     <div>
       <h4 className="text-white text-lg font-semibold mb-3">Exemy</h4>
       <p className="text-white/80 text-sm leading-relaxed">
@@ -132,7 +122,6 @@ export default function Home() {
       </p>
     </div>
 
-    {/* Compañía */}
     <div>
       <h4 className="text-white font-semibold mb-3">Compañía</h4>
       <ul className="space-y-2 text-white/80">
@@ -154,7 +143,6 @@ export default function Home() {
       </ul>
     </div>
 
-    {/* Legal */}
     <div>
       <h4 className="text-white font-semibold mb-3">Legal</h4>
       <ul className="space-y-2 text-white/80">
@@ -171,7 +159,6 @@ export default function Home() {
       </ul>
     </div>
 
-    {/* Soporte */}
     <div>
       <h4 className="text-white font-semibold mb-3">Soporte</h4>
       <ul className="space-y-2 text-white/80">
@@ -192,7 +179,6 @@ export default function Home() {
     </div>
   </div>
 
-  {/* Divider */}
   <div className="border-t border-white/10 mt-14 pt-6 text-center text-xs text-white/60">
     © {new Date().getFullYear()} Exemy. Todos los derechos reservados.
   </div>

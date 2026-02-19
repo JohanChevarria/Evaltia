@@ -18,8 +18,6 @@ export async function createClient() {
               cookieStore.set(name, value, options);
             });
           } catch {
-            // si se llama desde un Server Component a veces no deja setear;
-            // en Route Handler sí debería permitir.
           }
         },
       },

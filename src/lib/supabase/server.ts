@@ -18,8 +18,6 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             );
           } catch {
-            // En algunos casos (Server Components) Next no deja setear cookies aquí.
-            // Por eso también usamos middleware.
           }
         },
       },

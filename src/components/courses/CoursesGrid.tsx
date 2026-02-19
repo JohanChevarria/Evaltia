@@ -17,13 +17,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// === estilos de marca unificados ===
 const CTA_BUTTON =
   "inline-flex items-center gap-1 rounded-xl px-4 py-2 bg-indigo-600 text-white font-medium shadow-[0_8px_18px_rgba(15,23,42,0.35)] hover:bg-indigo-500 transition";
 
 const PROGRESS_FILL = "bg-indigo-500";
 
-// íconos por curso
 const iconMap: Record<string, React.ComponentType<any>> = {
   anatomia: Bone,
   histologia: Dna,
@@ -40,7 +38,7 @@ function slugify(input: string) {
   return input
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // quita tildes
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
 }
@@ -54,11 +52,9 @@ function IconChip({ slug }: { slug: string }) {
   );
 }
 
-// 👇 Cursos reales desde DB (lo mínimo que necesitamos)
 export type DbCourseForGrid = {
   id: string;
   name: string;
-  // opcionales para no romperte nada si aún no existen en tu tabla
   slug?: string | null;
   progress?: number | null;
 };
@@ -68,11 +64,10 @@ export default function CoursesGrid({
   basePath = "/dashboard/main",
 }: {
   courses?: DbCourseForGrid[];
-  basePath?: string; // "/dashboard/main" o `/dashboard/${uni}/main`
+  basePath?: string;
 }) {
   const [query, setQuery] = useState("");
 
-  // Si nos pasan cursos, usamos eso. Si no, seguimos con el mock.
   const normalized = useMemo(() => {
     if (Array.isArray(courses)) {
       return courses.map((c) => ({
@@ -100,7 +95,6 @@ export default function CoursesGrid({
 
   return (
     <div className="space-y-4">
-      {/* Buscador */}
       <div>
         <label className="block text-xs font-medium text-slate-600">
           Buscar cursos
@@ -113,7 +107,6 @@ export default function CoursesGrid({
         />
       </div>
 
-      {/* Grid de tarjetas (2 por fila en desktop) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filtered.map((c) => (
           <div
@@ -129,7 +122,6 @@ export default function CoursesGrid({
                   </h3>
                 </div>
 
-                {/* CTA desktop */}
                 <Link
                   href={`${basePath}/cursos/${c.slug}`}
                   className={`${CTA_BUTTON} hidden sm:inline-flex`}
@@ -138,7 +130,6 @@ export default function CoursesGrid({
                 </Link>
               </div>
 
-              {/* Progreso */}
               <div className="mt-4">
                 <div className="flex items-center justify-between text-xs text-slate-700 mb-1">
                   <span>Progreso</span>
@@ -152,7 +143,6 @@ export default function CoursesGrid({
                 </div>
               </div>
 
-              {/* CTA móvil */}
               <div className="mt-4 sm:hidden">
                 <Link
                   href={`${basePath}/cursos/${c.slug}`}

@@ -1,4 +1,3 @@
-// src/app/(onboarding)/university/university-client.tsx
 "use client";
 
 import Image from "next/image";

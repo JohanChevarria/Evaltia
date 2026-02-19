@@ -798,7 +798,6 @@ export default function ExamSolveClient({ payload }: Props) {
         </div>
       </div>
 
-      {/* Practice exit overlay (no native confirm) */}
       {showExitOverlay && mode === "practica" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-black/10 p-6 text-slate-900">

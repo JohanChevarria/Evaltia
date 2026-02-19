@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/page.tsx
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 

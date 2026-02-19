@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/sections/ProfileSection.tsx
 "use client";
 
 import { User, Lock, Calendar } from "lucide-react";
@@ -12,7 +11,6 @@ export default function ProfileSection({ value, onChange }: Props) {
   return (
     <SettingsSection title="Perfil" icon={User}>
       <div className="space-y-5">
-        {/* Username - No editable */}
         <div>
           <label className="settings-label">
             <Lock className="inline w-3.5 h-3.5 mr-1 opacity-60" />
@@ -24,7 +22,6 @@ export default function ProfileSection({ value, onChange }: Props) {
           </p>
         </div>
 
-        {/* Nombre y Apellidos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="settings-label">Nombre</label>
@@ -49,7 +46,6 @@ export default function ProfileSection({ value, onChange }: Props) {
           </div>
         </div>
 
-        {/* Género */}
         <div>
           <label className="settings-label">Género</label>
           <select
@@ -64,7 +60,6 @@ export default function ProfileSection({ value, onChange }: Props) {
           </select>
         </div>
 
-        {/* Fecha de nacimiento */}
         <div>
           <label className="settings-label">
             <Calendar className="inline w-3.5 h-3.5 mr-1 opacity-60" />
@@ -78,7 +73,6 @@ export default function ProfileSection({ value, onChange }: Props) {
           />
         </div>
 
-        {/* Cambiar contraseña */}
         <div className="pt-2">
           <button
             type="button"

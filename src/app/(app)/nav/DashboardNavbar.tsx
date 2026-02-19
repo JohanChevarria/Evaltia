@@ -1,12 +1,11 @@
-// src/app/(app)/nav/DashboardNavbar.tsx
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Users, User, Settings, LogOut } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// ✅ IMPORT DEL CLIENTE SUPABASE
 import { createClient } from "@/lib/supabase/client";
 
 type Tab = { label: string; short: string; href: string };
@@ -35,11 +34,9 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
     router.prefetch(`${baseAccount}/configuracion`);
   }, [router, tabs, baseAccount]);
 
-  // Dropdown control
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // Cierra al hacer click fuera
   useEffect(() => {
     function onDocMouseDown(e: MouseEvent) {
       if (!profileOpen) return;
@@ -53,26 +50,22 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, [profileOpen]);
 
-  // Handlers
   const goConfig = () => {
     setProfileOpen(false);
     router.push(`${baseAccount}/configuracion`);
   };
 
-  // ✅ LOGOUT REAL (CLIENT-SIDE, SUPABASE)
   const logout = async () => {
     setProfileOpen(false);
 
     const supabase = createClient();
     await supabase.auth.signOut();
 
-    // ✅ manda al landing
     window.location.href = "/";
   };
 
   return (
     <div className="relative z-50 grid grid-cols-[auto,minmax(0,1fr),auto] items-center gap-4">
-      {/* Logo */}
       <div className="flex items-center gap-3 shrink-0">
         <Image src="/evaltia-logo.png" alt="Exemy" width={36} height={36} />
         <span className="font-semibold text-lg leading-none hidden sm:inline">
@@ -80,7 +73,6 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
         </span>
       </div>
 
-      {/* Centro: tabs */}
       <div className="min-w-0">
         <div className="mx-auto max-w-full overflow-hidden">
           <div className="flex justify-center">
@@ -89,10 +81,10 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
                 const active = pathname === t.href;
 
                 return (
-                  <button
+                  <Link
                     key={t.href}
-                    type="button"
-                    onClick={() => router.push(t.href)}
+                    href={t.href}
+                    prefetch
                     className={[
                       "rounded-full font-medium transition-all whitespace-nowrap",
                       "px-3 py-2 text-sm sm:px-4 md:px-5",
@@ -104,7 +96,7 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
                   >
                     <span className="sm:hidden">{t.short}</span>
                     <span className="hidden sm:inline">{t.label}</span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -112,18 +104,16 @@ export default function DashboardNavbar({ uni }: { uni: string }) {
         </div>
       </div>
 
-      {/* Derecha: Amigos + Perfil */}
       <div className="flex items-center gap-3 shrink-0">
-        <button
-          type="button"
-          onClick={() => router.push(`${baseAccount}/amigos`)}
+        <Link
+          href={`${baseAccount}/amigos`}
+          prefetch
           title="Amigos"
           className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 bg-white/10 hover:bg-white/25 hover:backdrop-blur-sm transition-all"
         >
           <Users className="h-4 w-4" />
-        </button>
+        </Link>
 
-        {/* Perfil + dropdown */}
         <div className="relative z-50" ref={menuRef}>
           <button
             type="button"

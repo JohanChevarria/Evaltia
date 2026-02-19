@@ -79,7 +79,6 @@ export function HeroEvaltia() {
         </motion.div>
       </div>
 
-      {/* 👇 Subimos el mockup reduciendo margen superior */}
       <motion.div
         {...fadeUp}
         transition={{ duration: 0.6, delay: 0.2 }}

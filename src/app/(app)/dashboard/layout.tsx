@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/layout.tsx
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
@@ -16,7 +15,6 @@ export default async function DashboardLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // ✅ Login real (route group (auth)) => /login
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase
@@ -29,7 +27,6 @@ export default async function DashboardLayout({
 
   const role = profile.role ?? "student";
 
-  // ✅ Admin → studio
   if (role === "admin") {
     if (!profile.university_id) {
       redirect("/dashboard/main");
@@ -43,8 +40,6 @@ export default async function DashboardLayout({
     redirect(studioPath);
   }
 
-  // ✅ Onboarding → OJO: (onboarding) NO aparece en URL
-  // Tu ruta real es /university
   if (!profile.university_onboarding_completed) {
     redirect("/university");
   }

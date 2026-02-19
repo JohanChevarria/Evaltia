@@ -1,12 +1,9 @@
-// src/middleware.ts
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ✅ Rutas públicas: NO tocar sesión
-  // (Importante: tus auth pages reales son /login, /register, etc. porque (auth) es route group)
   if (
     pathname === "/" ||
     pathname === "/login" ||
@@ -21,7 +18,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ✅ Solo proteger hubs (tal como tú lo querías)
   const isProtected =
     pathname.startsWith("/studio") ||
     pathname.startsWith("/admin-studio");
@@ -30,7 +26,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- Desde aquí: SOLO rutas protegidas ---
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -50,12 +45,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 🔐 Aquí sí: refrescar sesión
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 🔴 Si no hay sesión, botar al login REAL
   if (!user) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);

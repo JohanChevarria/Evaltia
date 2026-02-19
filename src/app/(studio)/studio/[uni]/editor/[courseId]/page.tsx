@@ -1,9 +1,9 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getStudioPathForUniversityId } from "@/lib/studio/studio-path";
 import EditorClient from "../EditorClient";
-import EditSimulacroButton from "./EditSimulacroButton"; // ðŸ‘ˆ SOLO ESTO NUEVO
+import EditSimulacroButton from "./EditSimulacroButton";
 
 type PageProps = { params: Promise<{ uni: string; courseId: string }> };
 
@@ -23,12 +23,10 @@ export default async function CoursePage({ params }: PageProps) {
   const supabase = await createClient();
   const { uni, courseId } = await params;
 
-  // 1) SesiÃ³n
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
   if (!user) redirect("/login");
 
-  // 2) Perfil y rol
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, role, university_id")
@@ -42,7 +40,6 @@ export default async function CoursePage({ params }: PageProps) {
     ? await getStudioPathForUniversityId(supabase, profile.university_id)
     : "/dashboard/main";
 
-  // 3) Universidad por cÃ³digo
   const uniCode = (uni || "").toLowerCase();
 
   const { data: uniRow } = await supabase
@@ -53,12 +50,10 @@ export default async function CoursePage({ params }: PageProps) {
 
   if (!uniRow) redirect(fallbackPath);
 
-  // 4) Bloqueo por universidad
   if (!profile.university_id || profile.university_id !== uniRow.id) {
     redirect(fallbackPath);
   }
 
-  // 5) Traer curso (MISMO QUERY QUE ANTES)
   const { data: course, error: courseError } = await supabase
     .from("courses")
     .select("id, name, description")
@@ -68,14 +63,12 @@ export default async function CoursePage({ params }: PageProps) {
 
   if (courseError || !course) redirect(`/studio/${uniCode}/editor`);
 
-  // 6) Topics del curso
   const { data: topics } = await supabase
     .from("topics")
     .select("id, title, order_number")
     .eq("course_id", courseId)
     .order("order_number", { ascending: true });
 
-  // 7) Preview preguntas
   const topicIds = (topics as TopicRow[] | null)?.map((t) => t.id) ?? [];
 
   const { data: questions } = topicIds.length
@@ -89,7 +82,6 @@ export default async function CoursePage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link
@@ -108,7 +100,6 @@ export default async function CoursePage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* ðŸ”¥ REEMPLAZO LIMPIO */}
         <EditSimulacroButton
           courseId={courseId}
           initialQuestions={40}
@@ -116,10 +107,8 @@ export default async function CoursePage({ params }: PageProps) {
         />
       </div>
 
-      {/* Realtime listener */}
       <EditorClient universityId={uniRow.id} />
 
-      {/* Topics */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
         <h2 className="font-semibold">2) Temas (Topics)</h2>
 
@@ -147,7 +136,6 @@ export default async function CoursePage({ params }: PageProps) {
         )}
       </section>
 
-      {/* Preguntas recientes */}
       <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
         <h2 className="font-semibold">Vista previa: preguntas recientes</h2>
 

@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/sections/PlanSection.tsx
 import { CreditCard, Clock } from "lucide-react";
 import SettingsSection from "./SettingsSection";
 import type { SettingsInitialData } from "../types";

@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import "./globals.css";
 import type { Metadata } from "next";
 
@@ -14,9 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      {/* ✅ Fondo base global para que nunca se vea negro entre rutas */}
       <body className="min-h-screen w-full text-white bg-[#2c3e50]">
-        {/* ✅ “Moonlit fog” global (mismo estilo que auth/dashboard) */}
         <div
           className="fixed inset-0 -z-10"
           style={{

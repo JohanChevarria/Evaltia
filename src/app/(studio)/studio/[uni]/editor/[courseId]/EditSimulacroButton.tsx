@@ -16,7 +16,6 @@ type ExamConfig = {
     questions?: number;
     minutes?: number;
   };
-  // si tienes otros modos/configs aquí, se preservan con el spread
   [key: string]: any;
 };
 
@@ -34,11 +33,9 @@ export default function EditSimulacroButton({
   const [active, setActive] = useState<"preguntas" | "cronometro">("preguntas");
   const tabs = ["preguntas", "cronometro"] as const;
 
-  // valores editables
   const [questions, setQuestions] = useState(initialQuestions);
   const [minutes, setMinutes] = useState(initialMinutes);
 
-  // baseline real (DB o props)
   const [baseQuestions, setBaseQuestions] = useState(initialQuestions);
   const [baseMinutes, setBaseMinutes] = useState(initialMinutes);
 
@@ -56,7 +53,6 @@ export default function EditSimulacroButton({
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    // Al abrir: lee la config REAL desde DB (para no depender de props stale/defaults)
     (async () => {
       setLoading(true);
 
@@ -69,7 +65,6 @@ export default function EditSimulacroButton({
       setLoading(false);
 
       if (error) {
-        // fallback a props
         setBaseQuestions(initialQuestions);
         setBaseMinutes(initialMinutes);
         setQuestions(initialQuestions);
@@ -111,12 +106,9 @@ export default function EditSimulacroButton({
     setSaving(true);
     setMsg(null);
 
-    // clamp
     const safeQuestions = clampInt(questions, 1, 500, baseQuestions || 40);
     const safeMinutes = clampInt(minutes, 1, 500, baseMinutes || 20);
 
-    // importante: NO deep-merge automático en Postgres,
-    // así que primero traemos el exam_config actual y preservamos lo demás.
     const { data: current, error: readErr } = await supabase
       .from("courses")
       .select("exam_config")
@@ -152,7 +144,6 @@ export default function EditSimulacroButton({
       return;
     }
 
-    // actualiza baseline local
     const newBaseQ =
       Number(nextConfig?.simulacro?.questions) || safeQuestions;
     const newBaseM =
@@ -165,8 +156,6 @@ export default function EditSimulacroButton({
 
     setMsg("Guardado ✅");
 
-    // clave: refresca Server Components para que al cambiar de curso o volver,
-    // el UI reciba los nuevos initial props
     router.refresh();
   }
 
@@ -203,7 +192,6 @@ export default function EditSimulacroButton({
                   </button>
                 </div>
 
-                {/* tabs */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {tabs.map((t) => (
                     <button

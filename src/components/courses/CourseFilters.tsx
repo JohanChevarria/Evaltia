@@ -11,7 +11,6 @@ type Props = {
 export default function CourseFilters({ all, onChange }: Props) {
   const [query, setQuery] = useState("");
 
-  // Filtrar solo por nombre del curso
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return all;
@@ -21,7 +20,6 @@ export default function CourseFilters({ all, onChange }: Props) {
     );
   }, [all, query]);
 
-  // Mandar al padre la lista filtrada
   useEffect(() => {
     onChange(filtered);
   }, [filtered, onChange]);

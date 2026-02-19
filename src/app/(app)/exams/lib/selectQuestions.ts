@@ -1,4 +1,3 @@
-// src/app/(app)/exams/lib/selectQuestions.ts
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { shuffleWithSeed } from "./shuffle";
 import type { ExamQuestion } from "./types";
@@ -37,7 +36,6 @@ export async function selectQuestions({
 
   const maxLimit = Math.max(1, Math.min(limit, 500));
 
-  // 1) Intentar RPC (si existe)
   const rpcParams: Record<string, unknown> = {
     topic_ids: topicIds,
     limit_count: maxLimit,
@@ -51,7 +49,6 @@ export async function selectQuestions({
     .map((row: unknown) => (row as { id?: string }).id ?? "")
     .filter(Boolean);
 
-  // 2) Si RPC falló o vino vacío => fallback a query directa
   if (rpcError || questionIds.length === 0) {
     const runQuery = async (withUniversity: boolean) => {
       let query = supabase
@@ -67,13 +64,10 @@ export async function selectQuestions({
       return { data, error };
     };
 
-    // ✅ Primero intenta con universityId (si existe)
     let { data: fallbackQuestions, error: fallbackError } = await runQuery(true);
 
-    // ✅ Si no hay nada, intenta SIN universityId (para el caso university_id = NULL o mismatch)
     if ((!fallbackQuestions || fallbackQuestions.length === 0) && universityId) {
       const second = await runQuery(false);
-      // solo reemplaza si el segundo intento sí trajo algo o si el primero tuvo error raro
       if (second.data && second.data.length > 0) {
         fallbackQuestions = second.data;
         fallbackError = second.error;
@@ -96,7 +90,6 @@ export async function selectQuestions({
     return shuffled.slice(0, maxLimit);
   }
 
-  // 3) RPC devolvió ids => traemos filas en ese set de ids
   const { data: questionRows, error: rowsError } = await supabase
     .from("questions")
     .select("id, topic_id, course_id, university_id, text")

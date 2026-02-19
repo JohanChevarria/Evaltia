@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -45,6 +45,7 @@ export default function CursoDetallePage() {
   const uni = (params?.uni ?? "").toString();
 
   const initialName = (searchParams?.get("name") ?? "").toString().trim();
+  const shouldAutoOpenPractice = (searchParams?.get("newPractice") ?? "").toString() === "1";
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -55,6 +56,15 @@ export default function CursoDetallePage() {
   const [examOpen, setExamOpen] = useState(false);
   const [reviewLoadingId, setReviewLoadingId] = useState<string | null>(null);
   const [reviewErrors, setReviewErrors] = useState<Record<string, string>>({});
+  const autoOpenHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (!shouldAutoOpenPractice) return;
+    if (autoOpenHandledRef.current) return;
+
+    autoOpenHandledRef.current = true;
+    setExamOpen(true);
+  }, [shouldAutoOpenPractice]);
 
   useEffect(() => {
     let cancelled = false;

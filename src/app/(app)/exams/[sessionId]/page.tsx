@@ -33,7 +33,6 @@ export default async function ExamSessionPage({ params }: PageProps) {
         }}
       />
 
-      {/* ✅ antes: max-w-6xl. Ahora: más ancho tipo AMBOSS */}
       <div className="relative z-10 mx-auto w-full max-w-7xl 2xl:max-w-[1400px] px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <ExamSolveClient payload={payload} />
       </div>

@@ -41,7 +41,6 @@ export async function getSessionPayload(
     };
   }
 
-  // ✅ FIX: no seleccionar columnas que NO existen (image_url, hint)
   const { data: questionRows, error: qError } = await supabase
     .from("questions")
     .select("id, topic_id, course_id, university_id, text, question_type, matching_data, matching_key")
@@ -102,7 +101,6 @@ export async function getSessionPayload(
       course_id: (q as any).course_id,
       university_id: (q as any).university_id,
       text: (q as any).text ?? "",
-      // ✅ FIX: como esas columnas no existen en questions, se retorna null
       image_url: null,
       hint: null,
       position: row.position,

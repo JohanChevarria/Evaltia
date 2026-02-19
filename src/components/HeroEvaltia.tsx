@@ -1,13 +1,11 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Brain, LineChart, Clock } from "lucide-react";
 import type { ReactNode } from "react";
 
-// Landing principal de Exemy (hero + secciones) con foto + colores del hub
 export function HeroEvaltia() {
   return (
     <main className="relative min-h-screen text-white overflow-hidden">
-      {/* Fondo con FOTO + overlay con el mismo gradiente del hub */}
       <div className="absolute inset-0 -z-20">
         <Image
           src="/laptop-nuevo.png"
@@ -37,9 +35,7 @@ export function HeroEvaltia() {
         }}
       />
 
-      {/* CONTENIDO */}
       <section className="relative max-w-6xl mx-auto px-6 pt-24 pb-24 md:pt-28 md:pb-28 space-y-16">
-        {/* HERO */}
         <div className="max-w-3xl space-y-8">
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight text-white">
@@ -55,7 +51,6 @@ export function HeroEvaltia() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* CTA principal: igual que el botÃ³n del header */}
             <Link
               href="/register"
               className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[#06121F] shadow-lg shadow-slate-900/40 hover:bg-slate-100 transition"
@@ -64,7 +59,6 @@ export function HeroEvaltia() {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
 
-            {/* BotÃ³n secundario glassy */}
             <Link
               href="#features"
               className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-medium text-slate-50 hover:bg-white/20 transition backdrop-blur-sm"
@@ -79,7 +73,6 @@ export function HeroEvaltia() {
           </p>
         </div>
 
-        {/* SECCIÃ“N: QuÃ© ofrece Exemy */}
         <section id="features" className="space-y-8">
           <div className="max-w-3xl space-y-3">
             <h2 className="text-2xl md:text-3xl font-semibold text-white">
@@ -111,7 +104,6 @@ export function HeroEvaltia() {
           </div>
         </section>
 
-        {/* SECCIÃ“N: Adaptada a tu universidad + demo */}
         <section className="grid gap-10 md:grid-cols-[minmax(0,1.3fr),minmax(0,1fr)] items-start">
           <div className="space-y-4">
             <h2 className="text-2xl md:text-3xl font-semibold text-white">

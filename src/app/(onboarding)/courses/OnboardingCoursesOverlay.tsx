@@ -51,7 +51,6 @@ export default function OnboardingCoursesOverlay({
       setOnboardingError(null);
       setLoadingCourses(true);
 
-      // ✅ anti-loop: si no hay universityId, redirige 1 sola vez y no reintenta
       if (!universityId) {
         emitError("Primero debes elegir tu universidad para poder ver tus cursos.");
         setAvailableCourses([]);

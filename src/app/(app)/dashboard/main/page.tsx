@@ -1,4 +1,3 @@
-﻿// /Users/jchevarria/Evaltia/src/app/(app)/dashboard/main/page.tsx
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
@@ -24,7 +23,6 @@ export default async function DashboardMainRedirect() {
 
   if (!profile) redirect(LOGIN_PATH);
 
-  // Extra hardening: si por alguna razÃ³n cae aquÃ­ un admin, lo mandamos fuera
   if (profile.role === "admin") {
     if (!profile.university_id) redirect("/dashboard/main");
 

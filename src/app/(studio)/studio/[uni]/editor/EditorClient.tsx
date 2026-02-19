@@ -16,7 +16,6 @@ export default function EditorClient({
     const channel = supabase
       .channel(`studio-realtime-${universityId}`)
 
-      // 👇 CONCEPTS (bloques)
       .on(
         "postgres_changes",
         {
@@ -28,7 +27,6 @@ export default function EditorClient({
         () => router.refresh()
       )
 
-      // 👇 QUESTIONS
       .on(
         "postgres_changes",
         {
@@ -40,7 +38,6 @@ export default function EditorClient({
         () => router.refresh()
       )
 
-      // 👇 OPTIONS
       .on(
         "postgres_changes",
         {

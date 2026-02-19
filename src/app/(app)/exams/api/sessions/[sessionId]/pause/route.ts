@@ -50,7 +50,6 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "La practica ya fue finalizada." }, { status: 400 });
   }
 
-  // Solo se puede guardar 1 practica reanudable. Si ya existia una, se cierra automaticamente al guardar la nueva.
   const { error } = await supabase.rpc("pause_practice_session", {
     p_session_id: sessionId,
     p_user_id: user.id,

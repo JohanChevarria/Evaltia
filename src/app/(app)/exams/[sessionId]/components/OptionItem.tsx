@@ -27,7 +27,6 @@ export function OptionItem({
 }: OptionItemProps) {
   const base = "w-full rounded-xl border px-3 py-3 text-left transition";
 
-  // ✅ paleta sobria
   const stateClass = showCorrect
     ? "border-emerald-300 bg-emerald-50"
     : showIncorrect
@@ -49,7 +48,7 @@ export function OptionItem({
   const strikeClass = striked ? "line-through opacity-60" : "";
 
   const handleClick = () => {
-    if (isDisabled || striked) return; // ✅ bloquea lógica
+    if (isDisabled || striked) return;
     onSelect();
   };
 
@@ -75,7 +74,6 @@ export function OptionItem({
           </div>
         </div>
 
-        {/* ✅ explicación */}
         {showExplanation && (
           <div className="mt-2 text-[12px] leading-5 text-slate-600 text-left whitespace-pre-wrap break-words ev-question-font">
             {option.explanation || "Sin explicación"}
@@ -83,11 +81,10 @@ export function OptionItem({
         )}
       </button>
 
-      {/* tachado */}
       <button
         type="button"
         onClick={() => {
-          if (isDisabled) return; // bloquea si toca
+          if (isDisabled) return;
           onToggleStrike();
         }}
         className={`px-2 py-1 text-slate-500 hover:text-slate-900 select-none ${

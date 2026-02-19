@@ -1,4 +1,3 @@
-// src/app/(app)/dashboard/[uni]/account/configuracion/components/types.ts
 export type Gender = "unspecified" | "male" | "female" | "other";
 
 export type SettingsInitialData = {
@@ -10,13 +9,13 @@ export type SettingsInitialData = {
     firstName: string;
     lastName: string;
     gender: Gender;
-    birthdate: string | null; // YYYY-MM-DD
+    birthdate: string | null;
   };
 
   plan: {
     name: string;
     status: "demo" | "premium" | "expired" | string;
-    validUntil: string | null; // YYYY-MM-DD
+    validUntil: string | null;
   };
 
   preferences: {

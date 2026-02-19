@@ -1,4 +1,3 @@
-﻿// src/app/(onboarding)/university/page.tsx
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
@@ -51,7 +50,6 @@ export default async function UniversityOnboardingPage() {
       />
     );
   } catch (e: any) {
-    // Si algo explota en SSR, NO se queda negro: renderizamos client con error visible
     return (
       <UniversityOnboardingClient
         userId={""}
